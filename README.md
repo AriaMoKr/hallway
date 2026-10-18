@@ -83,6 +83,16 @@ navigator.xr?.addEventListener('sessiongranted', () => {
 Without that listener, the visitor arrives at the environment's 2D page and presses its Enter VR
 button.
 
+The hand-over has two limits, measured on a Quest with Quest Browser 152 (vrlbry,
+[`7eca62b`](https://github.com/AriaMoKr/vrlbry/commit/7eca62b)):
+
+- **One origin only.** A navigation to another origin (another domain, or another port) gets no
+  grant, so the visitor arrives at the 2D page. The hallway and vrlbry are both on
+  `ariamokr.github.io`, so the hand-over works between them.
+- **About 5 seconds.** The grant arrives about 0.1 s after the next page starts. A request made up
+  to 4.7 s later starts the session, while one at 5.2 s is refused as needing a click. Ask for the
+  session as soon as the page can draw a frame, not once everything else has loaded.
+
 ## Publishing
 
 `.github/workflows/pages.yml` publishes `public/` to GitHub Pages
