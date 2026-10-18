@@ -111,6 +111,42 @@ The hand-over has two limits, measured on a Quest with Quest Browser 152 (vrlbry
   to 4.7 s later starts the session, while one at 5.2 s is refused as needing a click. Ask for the
   session as soon as the page can draw a frame, not once everything else has loaded.
 
+## The view from your door
+
+An environment's way back to the hallway can show the hallway as seen from its own door. For every
+open door the site publishes that view, rendered from the doorway at eye height looking straight
+across the hall:
+
+```
+https://ariamokr.github.io/hallway/views/views.json
+https://ariamokr.github.io/hallway/views/<id>.jpg
+```
+
+`views.json` has, for each door id, its picture's file name and how to hang it behind an opening
+of your own (2:1, 2048 × 1024):
+
+```json
+"vrlbry": { "image": "vrlbry.jpg", "depth": 2.94, "pictureHeight": 6.5, "eye": 1.6, "horizon": 0.6154, "aspect": 2 }
+```
+
+The picture is a flat wall `depth` metres behind the opening, `pictureHeight` tall and `aspect`
+times as wide, centred on the opening, with its horizon `eye` metres above the sill and at
+`horizon` of its height from its bottom. It is a perspective view projected onto the plane of the
+opposite wall, so the floor and ceiling in front of that wall are in it too: hung that way (as
+`public/js/portal.js` hangs a picture), the hall looks right through your doorway, with some
+parallax. [vrlbry](https://github.com/AriaMoKr/vrlbry) shows its view through the door back in
+its library, and keeps a painted one for when this file cannot be read.
+
+The views change when the hall or its doors do. To render them again, run the dev server and, with
+a Quest connected over adb (or a desktop browser started with `--remote-debugging-port`, the dev
+server open in it, and `--cdp <its address>`):
+
+```bash
+node tools/door-views.mjs
+```
+
+It writes `public/views/<id>.jpg` and `views.json`, to be committed with the change.
+
 ## Publishing
 
 `.github/workflows/pages.yml` publishes `public/` to GitHub Pages

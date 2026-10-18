@@ -1,0 +1,13 @@
+{
+ "about": "The view out of each of the hallway's open doors: hang <image> behind your door back to the hallway (README, \"The view from your door\").",
+ "views": {
+  "vrlbry": {
+   "image": "vrlbry.jpg",
+   "depth": 2.94,
+   "pictureHeight": 6.5,
+   "eye": 1.6,
+   "horizon": 0.6154,
+   "aspect": 2
+  }
+ }
+}

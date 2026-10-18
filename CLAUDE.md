@@ -19,6 +19,7 @@ npm install      # postinstall: tools/vendor.mjs copies three (and IWER) into pu
 npm start        # tools/serve.mjs: public/ on http://localhost:8088/
 npm test         # node --test "test/*.test.js"
 node tools/quest-check.mjs [--local] [--screenshot]   # on a Quest over adb: VR frame timing, the panel, Exit VR; report in perf/ (gitignored)
+node tools/door-views.mjs [--port n] [--cdp <url>]    # the view out of every open door, rendered in a browser (a Quest over adb by default) from the dev server: public/views/<id>.jpg + views.json; rerun after changing the hall or its doors
 ```
 
 ## Layout
@@ -28,6 +29,7 @@ node tools/quest-check.mjs [--local] [--screenshot]   # on a Quest over adb: VR 
 - `arrival.js`: pure. Which door a visitor came back out of: `?from=<id>`, then Back (`back_forward` + the door in sessionStorage), then the referrer.
 - `hall.js` builds the scene from `builder.js` (world-space quads and boxes) with lighting baked into vertex colours by `bake.js`. Materials are unlit (`MeshBasicMaterial`); there are no real-time lights or shadows. A new light is an entry in hall.js's `lights` list.
 - `portal.js`: the doorway shader. It ray-casts a box behind the opening: the far wall is the preview picture, the floor, ceiling and sides are its edges stretched. The end window uses the same shader without the veil.
+- `door-view.js`: the view out of a door, for the environment behind it (README, "The view from your door"): `doorView` (pure: the eye on the threshold, the off-axis frustum onto the opposite wall's plane, the parameters an environment's portal hangs it with) and `renderDoorView` (into a render target, read back to a canvas, the fade hidden, the doorways still). `__hallway.doorViews()` renders every open door's once the previews have loaded (`hall.previewsLoaded`); `tools/door-views.mjs` writes them to `public/views/`. `tools/serve.mjs` listens on IPv6 localhost by default: for `adb reverse` from a Quest, give it `--host 127.0.0.1`.
 - `textures.js`: every canvas texture (painted at start-up, seeded so they never change).
 - The control panel: its place and buttons are in `layout.js` (`PANEL`, `PANEL_BUTTONS`, `panelButtonAt`; `castRay` reports `kind: 'panel'` with `u`, `v`), its drawing in `panel.js` (redrawn only when its state or the button pointed at changes), the VR navigation choices it sets (`move`, `turn`) in `settings.js` (localStorage `hallway.nav`). A new button is an entry in `PANEL_BUTTONS`, a label in `panel.js` and a case in `main.js`'s `controls.onPanel`.
 - `controls.js`: desktop, touch and XR input into one rig (yaw) + camera (head); in VR the left stick walks or aims a teleport (`move`), the right one snaps or turns smoothly (`turn`), and teleports go through `onTeleport` (main.js blinks the view). `main.js`: renderer, loop, going through doors (`go`: fade, then `location.assign`), arrival, VR entry including `sessiongranted`.

@@ -11,6 +11,7 @@ import { Overlay } from './overlay.js';
 import { arrivalDoorId } from './arrival.js';
 import { setAnisotropy } from './textures.js';
 import { loadNav, saveNav } from './settings.js';
+import { doorView, renderDoorView } from './door-view.js';
 
 const params = new URLSearchParams(location.search);
 const LAST_DOOR = 'hallway.lastDoor';
@@ -254,6 +255,18 @@ fade.to(0, 0.8);
 // For scripted testing. A hidden page gets no animation frames: drive it with tick().
 window.__hallway = {
   THREE, renderer, scene, camera, rig, hall, layout: L, controls, overlay, fade, xrDevice, go, enterVR,
+  /**
+   * The view out of every open door (door-view.js), once the doorways' pictures have loaded:
+   * [{ id, jpeg (a data: URL), params }], for tools/door-views.mjs.
+   */
+  async doorViews(quality = 0.88) {
+    await hall.previewsLoaded;
+    return L.doors.filter((d) => d.env).map((d) => ({
+      id: d.env.id,
+      jpeg: renderDoorView(renderer, scene, hall, d, { hide: [fade.mesh] }).toDataURL('image/jpeg', quality),
+      params: doorView(L, d).params,
+    }));
+  },
   tick(dt = 1 / 60, n = 1) {
     for (let i = 0; i < n; i++) step(dt);
     renderer.render(scene, camera);

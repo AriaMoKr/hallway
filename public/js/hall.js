@@ -193,6 +193,7 @@ export function buildHall(envs, { anisotropy = 1 } = {}) {
 
   // A portal in each open doorway.
   const portals = [];
+  const previews = []; // settled once each picture has loaded or failed
   const loader = new THREE.TextureLoader();
   for (const d of L.doors) {
     if (!d.env) continue;
@@ -207,16 +208,22 @@ export function buildHall(envs, { anisotropy = 1 } = {}) {
     const portal = { door: d, mesh, glow: 0 };
     portals.push(portal);
     if (d.env.preview) {
+      let settle;
+      previews.push(new Promise((r) => { settle = r; }));
       loader.load(
         d.env.preview,
         (texture) => {
+          settle();
           texture.colorSpace = THREE.SRGBColorSpace;
           texture.anisotropy = fallback.anisotropy;
           setPicture(material, texture, texture.image.width / texture.image.height);
           fallback.dispose();
         },
         undefined,
-        () => console.warn(`hallway: no preview for ${d.env.id} (${d.env.preview})`),
+        () => {
+          settle();
+          console.warn(`hallway: no preview for ${d.env.id} (${d.env.preview})`);
+        },
       );
     }
   }
@@ -234,5 +241,5 @@ export function buildHall(envs, { anisotropy = 1 } = {}) {
     }
   }
 
-  return { group, layout: L, portals, signs, panel, update };
+  return { group, layout: L, portals, signs, panel, update, previewsLoaded: Promise.all(previews) };
 }
