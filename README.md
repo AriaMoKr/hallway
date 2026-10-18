@@ -1,0 +1,92 @@
+# Hallway
+
+**https://ariamokr.github.io/hallway/**
+
+A WebXR corridor whose doors lead to other environments. The first one opens onto
+[vrlbry](https://ariamokr.github.io/vrlbry/), a candle-lit virtual library. Walk the hallway in VR
+on a Meta Quest, on a desktop or on a phone. There is nothing to install.
+
+Each open doorway shows the room behind it: the environment's picture, seen with parallax (and
+depth, in a headset), behind a glowing veil. Walk through it, click or tap it, or point at it in
+VR and pull the trigger, and the page goes there. When you come back, by the environment's own
+link or with Back, you start in front of the door you left by. Doors with no environment yet are
+drawn closed.
+
+## Moving about
+
+| | Look | Walk | Go through a door |
+|---|---|---|---|
+| Desktop | drag | WASD or arrows (Shift runs), Q/E or ←/→ turn, click the floor | click it, or walk into it |
+| Phone | drag | tap the floor | tap it |
+| Headset | your head | left stick, right stick turns in 30° steps, trigger at the floor teleports | trigger (or pinch) at it, or step through it |
+
+## Running it
+
+```bash
+npm install     # three.js (and IWER, for emulating a headset), copied into public/vendor/
+npm start       # http://localhost:8088/
+npm test
+```
+
+`public/` is the whole site: any static server can serve it once `npm install` has filled
+`public/vendor/`. WebXR needs a secure context. `http://localhost` counts as one. A Quest on the
+LAN can use `adb reverse tcp:8088 tcp:8088` and then open `http://localhost:8088/`.
+
+`?xr=emulate` installs Meta's IWER emulator (a virtual Quest 3), so the VR mode can be tried
+without a headset.
+
+## Adding a door
+
+Add an entry to [`public/js/environments.js`](public/js/environments.js), and a link to the
+`<noscript>` list in [`public/index.html`](public/index.html) (a test checks that one is there):
+
+```js
+{
+  id: 'garden',                         // short, unique; used in ?from=garden
+  title: 'Garden',                      // on the door's signs
+  subtitle: 'A walled garden at dusk',  // on the plaque beside it
+  url: 'https://example.org/garden/',
+  preview: 'https://example.org/garden/social.jpg', // optional; 2:1, readable cross-origin
+  color: '#7fc4a0',                     // the doorway's glow
+},
+```
+
+Doors fill the hall from the entrance, left then right, and the hall gets longer as the list
+does. A preview is the room seen through the doorway. A screenshot taken at eye height, looking
+straight ahead, works best: its horizon is placed at eye level, a little above the middle.
+
+## Linking back
+
+An environment brings visitors back by linking to the hallway with its own id:
+
+```
+https://ariamokr.github.io/hallway/?from=vrlbry
+```
+
+Without `?from=`, the hallway also recognizes a referrer from inside an environment's URL, and
+Back from an environment returns to the door the visitor left by.
+
+**Staying in VR across the trip.** When a page navigates during an immersive session, Quest
+Browser can grant the next page a session without a click: it fires `sessiongranted` on
+`navigator.xr`. The hallway listens for it, so a visitor who walks back in from an environment's
+VR stays in VR. For the same to work in the other direction, an environment listens too and
+starts its session at once:
+
+```js
+navigator.xr?.addEventListener('sessiongranted', () => {
+  // The same call the page's Enter VR button makes.
+  navigator.xr.requestSession('immersive-vr', { optionalFeatures: ['local-floor'] })
+    .then((session) => renderer.xr.setSession(session));
+});
+```
+
+Without that listener, the visitor arrives at the environment's 2D page and presses its Enter VR
+button.
+
+## Publishing
+
+`.github/workflows/pages.yml` publishes `public/` to GitHub Pages
+(https://ariamokr.github.io/hallway/, from [AriaMoKr/hallway](https://github.com/AriaMoKr/hallway))
+on every push to `main`. In the repository's Settings → Pages, the source must be "GitHub
+Actions". Every URL in the page is relative, so the hallway would also work at another path or at
+the account's own root.
