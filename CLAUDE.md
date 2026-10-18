@@ -6,11 +6,11 @@ Guidance for Claude Code in this repository.
 
 A WebXR hallway (three.js 0.186, plain ES modules, no bundler or build step): a corridor whose
 doors lead to other web environments, the first being vrlbry (https://ariamokr.github.io/vrlbry/,
-local checkout `C:\git\my\vrlbry`, whose conventions this project follows). `public/` is the whole
-site. `README.md` covers using it, adding a door and how environments link back.
+AriaMoKr/vrlbry, whose conventions this project follows). `public/` is the whole site.
+`README.md` covers using it, adding a door and how environments link back.
 
-Published at https://ariamokr.github.io/hallway/ from `main` of AriaMoKr/hallway (remote `gh`:
-the SSH alias `github-custom-remote` in MSYS2's `~/.ssh/config`) by `.github/workflows/pages.yml`.
+Published at https://ariamokr.github.io/hallway/ from `main` of AriaMoKr/hallway by
+`.github/workflows/pages.yml`.
 
 ## Commands
 
@@ -18,6 +18,7 @@ the SSH alias `github-custom-remote` in MSYS2's `~/.ssh/config`) by `.github/wor
 npm install      # postinstall: tools/vendor.mjs copies three (and IWER) into public/vendor/ (gitignored)
 npm start        # tools/serve.mjs: public/ on http://localhost:8088/
 npm test         # node --test "test/*.test.js"
+node tools/quest-check.mjs [--local] [--screenshot]   # on a Quest over adb: VR frame timing, the panel, Exit VR; report in perf/ (gitignored)
 ```
 
 ## Layout

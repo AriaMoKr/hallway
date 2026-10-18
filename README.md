@@ -47,6 +47,11 @@ LAN can use `adb reverse tcp:8088 tcp:8088` and then open `http://localhost:8088
 `?xr=emulate` installs Meta's IWER emulator (a virtual Quest 3), so the VR mode can be tried
 without a headset.
 
+`node tools/quest-check.mjs` checks the hallway on a Quest connected over adb, which nobody needs
+to wear. It opens the published site, or the dev server with `--local`, enters VR, times the
+frames while walking the hall, presses the panel's settings and Exit VR, and writes a report to
+`perf/` (`--help` lists the options).
+
 ## Adding a door
 
 Add an entry to [`public/js/environments.js`](public/js/environments.js), and a link to the

@@ -1,5 +1,7 @@
 node_modules/
 # Copied from node_modules by tools/vendor.mjs (npm install)
 public/vendor/
+# Reports and screenshots from tools/quest-check.mjs
+perf/
 .DS_Store
 Thumbs.db
