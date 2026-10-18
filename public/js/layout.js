@@ -22,6 +22,31 @@ export const HALL = {
 /** The window in the end wall. */
 export const WINDOW = { width: 1.6, bottom: 0.95, top: 2.85 };
 
+/**
+ * The control panel on the right wall near the entrance: Enter / Exit VR and how to move in VR.
+ * y and z are its centre; depth how far its face stands out from the wall.
+ */
+export const PANEL = { side: 1, z: -2.6, y: 1.36, width: 0.56, height: 0.4, depth: 0.03 };
+
+/** The panel's canvas, and its buttons on it as [id, x0, y0, x1, y1] in canvas pixels (y down). */
+export const PANEL_PX = { width: 512, height: 366 };
+export const PANEL_BUTTONS = [
+  ['vr', 32, 74, 480, 136],
+  ['move:teleport', 160, 160, 314, 218],
+  ['move:smooth', 326, 160, 480, 218],
+  ['turn:snap', 160, 236, 314, 294],
+  ['turn:smooth', 326, 236, 480, 294],
+];
+
+/** The button at (u, v) on the panel (0…1 from its bottom left, as castRay reports), or null. */
+export function panelButtonAt(u, v) {
+  const x = u * PANEL_PX.width, y = (1 - v) * PANEL_PX.height;
+  for (const b of PANEL_BUTTONS) {
+    if (x >= b[1] && x <= b[3] && y >= b[2] && y <= b[4]) return b[0];
+  }
+  return null;
+}
+
 export function layoutHall(envs, hall = HALL) {
   const slots = Math.max(hall.minSlots, envs.length + (envs.length % 2));
   const pairs = slots / 2;
@@ -101,10 +126,11 @@ export function doorCrossed(L, x, z) {
 }
 
 /**
- * What a ray from inside the hall reaches first: a doorway (open or closed), the window, the floor,
- * a wall or the ceiling. The hall is a box, so this is where the ray leaves it. Writes into out
- * { t, kind, door, x, y, z, nx, ny, nz } (n: the surface's normal, pointing into the hall) and
- * returns it, or null when the ray leaves through no surface (it starts outside, pointing away).
+ * What a ray from inside the hall reaches first: a doorway (open or closed), the control panel, the
+ * window, the floor, a wall or the ceiling. The hall is a box, so this is where the ray leaves it.
+ * Writes into out { t, kind, door, x, y, z, nx, ny, nz, u, v } (n: the surface's normal, pointing
+ * into the hall; u, v: where on the panel, 0…1 from its bottom left) and returns it, or null when
+ * the ray leaves through no surface (it starts outside, pointing away).
  */
 export function castRay(L, ox, oy, oz, dx, dy, dz, out) {
   const { hall } = L;
@@ -127,10 +153,30 @@ export function castRay(L, ox, oy, oz, dx, dy, dz, out) {
   out.nx = 0;
   out.ny = 0;
   out.nz = 0;
+  out.u = 0;
+  out.v = 0;
   if (plane === 'left' || plane === 'right') {
     const side = plane === 'left' ? -1 : 1;
     out.kind = 'wall';
     out.nx = -side;
+    if (side === PANEL.side) {
+      // The panel's face stands a little out from the wall, so the ray meets it first.
+      const px = side * (hw - PANEL.depth);
+      const s = (px - ox) / dx;
+      const py = oy + dy * s, pz = oz + dz * s;
+      const u = 0.5 + (side * (pz - PANEL.z)) / PANEL.width;
+      const v = 0.5 + (py - PANEL.y) / PANEL.height;
+      if (s > 0 && u >= 0 && u <= 1 && v >= 0 && v <= 1) {
+        out.kind = 'panel';
+        out.t = s;
+        out.x = px;
+        out.y = py;
+        out.z = pz;
+        out.u = u;
+        out.v = v;
+        return out;
+      }
+    }
     if (y < hall.doorHeight) {
       for (const d of L.doors) {
         if (d.side === side && Math.abs(z - d.z) < hall.doorWidth / 2) {

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { HALL, layoutHall, clampToHall, doorCrossed, doorSpawn, castRay } from '../public/js/layout.js';
+import { HALL, PANEL, PANEL_BUTTONS, PANEL_PX, layoutHall, clampToHall, doorCrossed, doorSpawn, castRay, panelButtonAt } from '../public/js/layout.js';
 
 const env = (id) => ({ id, title: id, url: `https://example.org/${id}/`, color: '#ffffff' });
 
@@ -77,4 +77,27 @@ test('castRay finds doors, the floor, the window and the walls', () => {
   assert.equal(at(0, 1.6, -1, 0, 3.2, -1.5).kind, 'ceiling');
   assert.equal(at(0, 1.6, -1, 0, 1.6, 0).kind, 'wall');
   assert.ok(Math.abs(at(0, 1.6, -1, 0, 1.6, 0).t - 1) < 1e-9);
+});
+
+test('castRay finds the control panel and the button pointed at', () => {
+  const L = layoutHall([env('a')]);
+  const out = {};
+  const face = PANEL.side * (L.halfWidth - PANEL.depth);
+  const at = (y, z) => {
+    const ox = 0, oy = 1.6, oz = -1;
+    const dx = face - ox, dy = y - oy, dz = z - oz, n = Math.hypot(dx, dy, dz);
+    return castRay(L, ox, oy, oz, dx / n, dy / n, dz / n, out) && { ...out };
+  };
+  // Every button's centre, mapped from the canvas to the wall.
+  for (const [id, x0, y0, x1, y1] of PANEL_BUTTONS) {
+    const u = (x0 + x1) / 2 / PANEL_PX.width, v = 1 - (y0 + y1) / 2 / PANEL_PX.height;
+    const hit = at(PANEL.y + (v - 0.5) * PANEL.height, PANEL.z + PANEL.side * (u - 0.5) * PANEL.width);
+    assert.equal(hit.kind, 'panel', id);
+    assert.ok(Math.abs(hit.u - u) < 1e-6 && Math.abs(hit.v - v) < 1e-6, id);
+    assert.equal(panelButtonAt(hit.u, hit.v), id);
+    assert.ok(Math.abs(Math.abs(hit.x) - (L.halfWidth - PANEL.depth)) < 1e-9, 'on the panel face, in front of the wall');
+  }
+  assert.equal(panelButtonAt(0.02, 0.98), null, 'the title, no button');
+  assert.equal(at(PANEL.y, PANEL.z + PANEL.width).kind, 'wall', 'beside the panel');
+  assert.ok(L.doors.every((d) => d.side !== PANEL.side || Math.abs(d.z - PANEL.z) > HALL.doorWidth / 2 + 0.2 + PANEL.width / 2), 'clear of the doors');
 });

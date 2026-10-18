@@ -1,11 +1,12 @@
 // Builds the hallway: floor, walls, ceiling and trim as a few merged meshes with baked lighting,
 // a portal in every open doorway, a closed door in the others, signs, lamps and the end window.
 import * as THREE from 'three';
-import { WINDOW, layoutHall } from './layout.js';
+import { PANEL, WINDOW, layoutHall } from './layout.js';
 import { Builder } from './builder.js';
 import { bake, boxOcclusion, lightAt } from './bake.js';
 import * as T from './textures.js';
 import { openingGeometry, placePortal, portalMaterial, setPicture } from './portal.js';
+import { ControlPanel } from './panel.js';
 
 const lin = (hex) => {
   const c = new THREE.Color(hex); // three converts sRGB hex to its linear working space
@@ -20,7 +21,7 @@ const CREAM = lin('#e6dbc3');
 // The room seen through a doorway: its picture hangs this far back, its horizon at eye height.
 const PICTURE = { depth: 2.4, height: 3.0, eye: 1.6, horizon: 0.56 };
 
-export function buildHall(envs) {
+export function buildHall(envs, { anisotropy = 1 } = {}) {
   const L = layoutHall(envs);
   const { width: W, height: H, doorWidth: DW, doorHeight: DH, reveal: R } = L.hall;
   const hw = L.halfWidth, z0 = L.zStart, z1 = L.zEnd;
@@ -156,6 +157,12 @@ export function buildHall(envs) {
   box([-0.68, 1.47, -0.02], [0.68, 2.03, 0], DARK_WOOD);
   sign(T.titleTexture(), 1.3, 0.5, [0, 1.75, -0.022], Math.PI, [0, 0, -1]).name = 'title';
 
+  // The control panel, in a wooden frame on the wall.
+  const pw = PANEL.side * hw;
+  box([pw, PANEL.y - PANEL.height / 2 - 0.025, PANEL.z - PANEL.width / 2 - 0.025], [pw - PANEL.side * (PANEL.depth - 0.004), PANEL.y + PANEL.height / 2 + 0.025, PANEL.z + PANEL.width / 2 + 0.025], DARK_WOOD);
+  const panel = new ControlPanel({ halfWidth: hw, anisotropy, color: lightColor([pw, PANEL.y, PANEL.z], [-PANEL.side, 0, 0]) });
+  group.add(panel.mesh);
+
   add(lit(trim), new THREE.MeshBasicMaterial({ vertexColors: true }), 'trim');
   if (slabs.count) add(lit(slabs), new THREE.MeshBasicMaterial({ map: T.doorTexture(), vertexColors: true }), 'closed doors');
 
@@ -227,5 +234,5 @@ export function buildHall(envs) {
     }
   }
 
-  return { group, layout: L, portals, signs, update };
+  return { group, layout: L, portals, signs, panel, update };
 }

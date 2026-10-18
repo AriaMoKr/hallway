@@ -4,7 +4,7 @@ import * as THREE from 'three';
 
 export const SERIF = '"Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Noto Serif", serif';
 export const SANS = 'system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif';
-const GOLD = '#e0bb72';
+export const GOLD = '#e0bb72';
 const ENAMEL = '#14231f';
 
 let anisotropy = 1;
@@ -270,7 +270,8 @@ function fit(g, text, maxWidth, size, style) {
   return size;
 }
 
-function enamel(g, w, h, inset) {
+/** A sign's ground: a wooden edge, dark green enamel and a gold line. */
+export function enamel(g, w, h, inset) {
   g.fillStyle = '#2b1b10';
   g.fillRect(0, 0, w, h);
   const e = g.createLinearGradient(0, 0, 0, h);

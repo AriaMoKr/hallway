@@ -1,17 +1,19 @@
 // Moving about the hall and choosing doors, on every device:
 //   desktop: drag to look, WASD / arrows to walk (Shift runs), click a door or the floor
 //   phone:   drag to look, tap a door or the floor
-//   headset: point and pull the trigger (or pinch) at a door or the floor; the left stick walks,
-//            the right one turns in steps; or walk through a doorway in the room
+//   headset: point and pull the trigger (or pinch) at a door, the floor or the control panel; the
+//            left stick walks (move 'smooth') or aims a teleport (move 'teleport'), the right one
+//            turns in steps (turn 'snap') or smoothly (turn 'smooth'); or walk through a doorway
 // The viewer's body is `rig` (yaw only); the camera is its head (pitch on a desktop, the headset's
 // pose in VR). Per frame nothing is allocated.
 import * as THREE from 'three';
-import { castRay, clampToHall } from './layout.js';
+import { castRay, clampToHall, panelButtonAt } from './layout.js';
 
 const LOOK = 0.0045; // radians per pixel dragged
 const WALK = 1.9, RUN = 3.8, XR_WALK = 1.8; // metres per second
 const TURN = 1.9; // radians per second (arrow keys)
 const SNAP = Math.PI / 6;
+const SMOOTH_TURN = 1.6; // radians per second at full stick
 const PITCH = 1.35;
 const EYE = 1.6;
 
@@ -39,8 +41,16 @@ export class Controls {
     this.pitch = 0;
     this.keys = new Set();
     this.hoverDoor = null;
+    this.hoverPanel = null; // the control panel's button pointed at
+    /** VR navigation (settings.js): move 'smooth' | 'teleport', turn 'snap' | 'smooth'. */
+    this.move = 'smooth';
+    this.turn = 'snap';
     /** (door, how) when a door is chosen: how is 'screen' or 'xr'. */
     this.onSelect = () => {};
+    /** (button id) when a button of the control panel is pressed. */
+    this.onPanel = () => {};
+    /** (move) for a teleport: main.js blinks the view around move(), which puts the viewer there. */
+    this.onTeleport = (move) => move();
     /** The first time the viewer does anything (hides the hint). */
     this.onActivity = () => {};
     this.auto = null; // a walk under way: { points: [[x, z], …], i, face: door|null, speed }
@@ -49,7 +59,7 @@ export class Controls {
     this._cursor = '';
     this._raycaster = new THREE.Raycaster();
     this._ndc = new THREE.Vector2();
-    this._hit = { t: 0, kind: '', door: null, x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0 };
+    this._hit = { t: 0, kind: '', door: null, x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0, u: 0, v: 0 };
     this._head = new THREE.Vector3();
     this._dir = new THREE.Vector3();
     this._origin = new THREE.Vector3();
@@ -71,6 +81,13 @@ export class Controls {
     this.pitch = 0;
     this.auto = null;
     this._apply();
+  }
+
+  /** Sets how to move and turn in VR (settings.js). */
+  setNav({ move, turn }) {
+    this.move = move;
+    this.turn = turn;
+    for (const h of this.hands) h.aiming = false;
   }
 
   /** Walks to a point on the floor. */
@@ -169,13 +186,15 @@ export class Controls {
   }
 
   _updateHover() {
-    let door = null;
+    let door = null, button = null;
     if (this._mouse && !this._down) {
       const hit = this._pickScreen(this._mouse.x, this._mouse.y);
       if (hit?.kind === 'door') door = hit.door;
+      else if (hit?.kind === 'panel') button = panelButtonAt(hit.u, hit.v);
     }
     this.hoverDoor = door;
-    const cursor = door?.env ? 'pointer' : this._down?.moved ? 'grabbing' : '';
+    this.hoverPanel = button;
+    const cursor = door?.env || button ? 'pointer' : this._down?.moved ? 'grabbing' : '';
     if (cursor !== this._cursor) this.dom.style.cursor = this._cursor = cursor;
   }
 
@@ -183,6 +202,7 @@ export class Controls {
     const hit = this._pickScreen(clientX, clientY);
     if (!hit) return;
     if (hit.kind === 'door') this.onSelect(hit.door, 'screen');
+    else if (hit.kind === 'panel') this._press(panelButtonAt(hit.u, hit.v));
     else if (hit.kind === 'floor') this.walkTo(hit.x, hit.z);
   }
 
@@ -254,13 +274,14 @@ export class Controls {
       const reticle = new THREE.Mesh(ringGeometry, new THREE.MeshBasicMaterial({ color: 0xfff0d6, transparent: true, opacity: 0.85, depthWrite: false }));
       reticle.visible = false;
       this.scene.add(reticle);
-      const hand = { controller, laser, tip, reticle, source: null, hit: { ...this._hit }, last: null };
+      const hand = { controller, laser, tip, reticle, source: null, hit: { ...this._hit }, last: null, aiming: false };
       controller.addEventListener('connected', (e) => {
         hand.source = e.data;
       });
       controller.addEventListener('disconnected', () => {
         hand.source = null;
         hand.last = null;
+        hand.aiming = false;
         laser.visible = reticle.visible = false;
       });
       controller.addEventListener('select', () => this._xrSelect(hand));
@@ -310,33 +331,18 @@ export class Controls {
       this.rig.updateMatrixWorld();
       this._moveHead(this._entry.x, this._entry.z);
     }
-    const session = this.renderer.xr.getSession();
-    const sources = session ? session.inputSources : [];
-    for (let i = 0; i < sources.length; i++) {
-      const src = sources[i];
-      const pad = src.gamepad;
+    // The sticks: the right one turns, the left one walks or aims a teleport.
+    for (const h of this.hands) {
+      const pad = h.source?.gamepad;
       if (!pad || pad.axes.length < 2) continue;
       const ax = pad.axes.length >= 4 ? pad.axes[2] : pad.axes[0];
       const ay = pad.axes.length >= 4 ? pad.axes[3] : pad.axes[1];
-      if (src.handedness === 'right') {
-        if (this._snapArmed && Math.abs(ax) > 0.6) {
-          this._turnAboutHead(-Math.sign(ax) * SNAP);
-          this._snapArmed = false;
-        } else if (Math.abs(ax) < 0.3) this._snapArmed = true;
-      } else if (Math.hypot(ax, ay) > 0.15) {
-        this.camera.getWorldDirection(this._dir);
-        let fx = this._dir.x, fz = this._dir.z;
-        const fl = Math.hypot(fx, fz) || 1;
-        fx /= fl;
-        fz /= fl;
-        // Right of forward (fx, fz) is (-fz, fx).
-        const step = XR_WALK * dt;
-        this.camera.getWorldPosition(this._head);
-        this._moveHead(this._head.x + (-fz * ax - fx * ay) * step, this._head.z + (fx * ax - fz * ay) * step);
-      }
+      if (h.source.handedness === 'right') this._turnStick(ax, dt);
+      else if (this.move === 'teleport') this._teleportStick(h, ay);
+      else this._walkStick(ax, ay, dt);
     }
     this.rig.updateMatrixWorld();
-    let hover = null;
+    let door = null, button = null;
     for (const h of this.hands) {
       const mode = h.source?.targetRayMode;
       if (mode !== 'tracked-pointer') {
@@ -357,15 +363,63 @@ export class Controls {
         continue;
       }
       const open = hit.kind === 'door' && hit.door.env;
-      if (open) hover = hit.door;
+      const pressable = hit.kind === 'panel' ? panelButtonAt(hit.u, hit.v) : null;
+      const target = h.aiming && hit.kind === 'floor';
+      if (open) door = hit.door;
+      if (pressable) button = pressable;
       this._normal.set(hit.nx, hit.ny, hit.nz);
       h.reticle.position.set(hit.x + hit.nx * 0.01, hit.y + hit.ny * 0.01, hit.z + hit.nz * 0.01);
       h.reticle.quaternion.setFromUnitVectors(Z_AXIS, this._normal);
-      h.reticle.scale.setScalar(open ? 1.8 : 1);
-      h.reticle.material.color.setHex(open ? 0xe8c47c : hit.kind === 'floor' ? 0xfff0d6 : 0x9a8f80);
+      h.reticle.scale.setScalar(target ? 3.2 : open ? 1.8 : pressable ? 0.7 : 1);
+      h.reticle.material.color.setHex(target || open || pressable ? 0xe8c47c : hit.kind === 'floor' ? 0xfff0d6 : 0x9a8f80);
       h.reticle.visible = true;
     }
-    this.hoverDoor = hover;
+    this.hoverDoor = door;
+    this.hoverPanel = button;
+  }
+
+  /** Right stick: a 30 degree step each push (snap), or turning while held (smooth). */
+  _turnStick(ax, dt) {
+    if (this.turn === 'smooth') {
+      if (Math.abs(ax) > 0.15) this._turnAboutHead(-ax * SMOOTH_TURN * dt);
+      return;
+    }
+    if (this._snapArmed && Math.abs(ax) > 0.6) {
+      this._turnAboutHead(-Math.sign(ax) * SNAP);
+      this._snapArmed = false;
+    } else if (Math.abs(ax) < 0.3) this._snapArmed = true;
+  }
+
+  /** Left stick, move 'smooth': walk the way the head faces. */
+  _walkStick(ax, ay, dt) {
+    if (Math.hypot(ax, ay) <= 0.15) return;
+    this.camera.getWorldDirection(this._dir);
+    let fx = this._dir.x, fz = this._dir.z;
+    const fl = Math.hypot(fx, fz) || 1;
+    fx /= fl;
+    fz /= fl;
+    // Right of forward (fx, fz) is (-fz, fx).
+    const step = XR_WALK * dt;
+    this.camera.getWorldPosition(this._head);
+    this._moveHead(this._head.x + (-fz * ax - fx * ay) * step, this._head.z + (fx * ax - fz * ay) * step);
+  }
+
+  /** Left stick, move 'teleport': pushed forward, that hand's ray aims; let go, and the viewer is there. */
+  _teleportStick(h, ay) {
+    if (ay < -0.6) h.aiming = true;
+    else if (h.aiming && ay > -0.3) {
+      h.aiming = false;
+      const hit = h.last;
+      if (hit?.kind === 'floor') this._teleport(hit.x, hit.z);
+    }
+  }
+
+  _teleport(x, z) {
+    this.onTeleport(() => this._moveHead(x, z));
+  }
+
+  _press(id) {
+    if (id) this.onPanel(id);
   }
 
   _xrSelect(hand) {
@@ -373,7 +427,8 @@ export class Controls {
     if (!hit) return;
     this.onActivity();
     if (hit.kind === 'door') this.onSelect(hit.door, 'xr');
-    else if (hit.kind === 'floor') this._moveHead(hit.x, hit.z);
+    else if (hit.kind === 'panel') this._press(panelButtonAt(hit.u, hit.v));
+    else if (hit.kind === 'floor') this._teleport(hit.x, hit.z);
   }
 
   _onSessionEnd() {
@@ -386,8 +441,10 @@ export class Controls {
     for (const h of this.hands) {
       h.laser.visible = h.reticle.visible = false;
       h.last = null;
+      h.aiming = false;
     }
     this.hoverDoor = null;
+    this.hoverPanel = null;
     this.setPose(c.x, c.z, yaw);
   }
 }

@@ -18,7 +18,19 @@ drawn closed.
 |---|---|---|---|
 | Desktop | drag | WASD or arrows (Shift runs), Q/E or ←/→ turn, click the floor | click it, or walk into it |
 | Phone | drag | tap the floor | tap it |
-| Headset | your head | left stick, right stick turns in 30° steps, trigger at the floor teleports | trigger (or pinch) at it, or step through it |
+| Headset | your head | left stick walks (or aims a teleport), right stick turns, trigger at the floor teleports | trigger (or pinch) at it, or step through it |
+
+A control panel hangs on the right-hand wall near the entrance. Point at it (or click it) to enter
+or exit VR, and to choose how to move in VR:
+
+- **Move: Smooth** (the default): the left stick walks the way you face.
+- **Move: Teleport**: push the left stick forward, aim that controller's ray at the floor, and let
+  go to be there.
+- **Turn: Snap** (the default): the right stick turns you 30° at a time.
+- **Turn: Smooth**: the right stick turns you while held.
+
+The trigger (or a pinch) at the floor teleports in either mode, and every teleport blinks the
+view black for a moment. The choices are kept in this browser.
 
 ## Running it
 

@@ -10,6 +10,7 @@ import { Fade } from './fade.js';
 import { Overlay } from './overlay.js';
 import { arrivalDoorId } from './arrival.js';
 import { setAnisotropy } from './textures.js';
+import { loadNav, saveNav } from './settings.js';
 
 const params = new URLSearchParams(location.search);
 const LAST_DOOR = 'hallway.lastDoor';
@@ -57,7 +58,8 @@ renderer.setSize(innerWidth, innerHeight);
 renderer.xr.enabled = true;
 renderer.xr.setReferenceSpaceType('local-floor');
 document.getElementById('app').append(renderer.domElement);
-setAnisotropy(Math.min(8, renderer.capabilities.getMaxAnisotropy()));
+const anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+setAnisotropy(anisotropy);
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#0b0907');
@@ -75,11 +77,13 @@ rig.name = 'rig';
 rig.add(camera);
 scene.add(rig);
 
-const hall = buildHall(ENVIRONMENTS);
+const hall = buildHall(ENVIRONMENTS, { anisotropy });
 scene.add(hall.group);
 const L = hall.layout;
 
 const controls = new Controls({ renderer, camera, rig, scene, dom: renderer.domElement, layout: L });
+const nav = loadNav();
+controls.setNav(nav);
 const fade = new Fade(camera, 1);
 
 // Where to start: in front of the door just come back through, else at the entrance.
@@ -160,18 +164,57 @@ async function enterVR() {
     entering = false;
   }
 }
+let vrSupported = false;
 renderer.xr.addEventListener('sessionstart', () => {
   overlay.vr.textContent = 'Exit VR';
+  showPanel();
 });
 renderer.xr.addEventListener('sessionend', () => {
   overlay.vr.textContent = 'Enter VR';
+  showPanel();
 });
-navigator.xr?.isSessionSupported?.('immersive-vr').then((ok) => ok && overlay.showVR(enterVR), () => {});
+navigator.xr?.isSessionSupported?.('immersive-vr').then((ok) => {
+  vrSupported = ok;
+  showPanel();
+  if (ok) overlay.showVR(enterVR);
+}, () => {});
 // Arriving from another environment's immersive session (Quest Browser): the browser grants this
-// page a session without a click. The inline script in index.html notes a grant made before this
-// module ran.
-if (window.hallwayXrGranted) enterVR();
-navigator.xr?.addEventListener?.('sessiongranted', () => enterVR());
+// page a session without a click, for about 5 s and only within one origin (README). The inline
+// script in index.html notes a grant made before this module ran.
+const takeGranted = () => {
+  if (!renderer.xr.isPresenting) enterVR();
+};
+if (window.hallwayXrGranted) takeGranted();
+navigator.xr?.addEventListener?.('sessiongranted', takeGranted);
+
+// ── The control panel on the wall ────────────────────────────────────────────
+
+function showPanel() {
+  hall.panel.set({ vr: renderer.xr.isPresenting ? 'exit' : vrSupported ? 'enter' : 'none', move: nav.move, turn: nav.turn });
+}
+showPanel();
+controls.onPanel = (id) => {
+  if (id === 'vr') {
+    if (renderer.xr.isPresenting || vrSupported) enterVR(); // enters, or exits when in VR
+    return;
+  }
+  const [key, value] = id.split(':');
+  nav[key] = value;
+  controls.setNav(nav);
+  saveNav(nav);
+  showPanel();
+};
+// A teleport in VR blinks: a moment of black hides the jump.
+controls.onTeleport = (move) => {
+  if (leaving || !renderer.xr.isPresenting) {
+    move();
+    return;
+  }
+  fade.to(1, 0.08, () => {
+    move();
+    fade.to(0, 0.2);
+  });
+};
 
 // ── The frame loop ───────────────────────────────────────────────────────────
 
@@ -184,6 +227,7 @@ function step(dt) {
   controls.update(dt);
   camera.getWorldPosition(head);
   hall.update(time, dt, head, controls.hoverDoor);
+  hall.panel.setHover(controls.hoverPanel);
   overlay.setHover(controls.hoverDoor?.env ?? null);
   if (!leaving) {
     const door = doorCrossed(L, head.x, head.z);
