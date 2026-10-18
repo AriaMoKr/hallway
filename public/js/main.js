@@ -3,12 +3,13 @@
 // Coming back, from its link or with Back, puts the viewer in front of the door they left by.
 import * as THREE from 'three';
 import { ENVIRONMENTS } from './environments.js';
-import { doorCrossed, doorSpawn } from './layout.js';
+import { HALL, doorCrossed, doorSpawn } from './layout.js';
 import { buildHall } from './hall.js';
 import { Controls } from './controls.js';
 import { Fade } from './fade.js';
 import { Overlay } from './overlay.js';
 import { arrivalDoorId } from './arrival.js';
+import { doorLink, doorPose } from './link.js';
 import { setAnisotropy } from './textures.js';
 import { loadNav, saveNav } from './settings.js';
 import { doorView, renderDoorView } from './door-view.js';
@@ -45,7 +46,10 @@ function lastDoor() {
   }
 }
 
-const overlay = new Overlay(ENVIRONMENTS, { onLeave: (env) => rememberDoor(env.id) });
+const overlay = new Overlay(ENVIRONMENTS, {
+  href: (env) => doorLink(env, { here: location.href, hall: HALL }),
+  onLeave: (env) => rememberDoor(env.id),
+});
 
 let renderer;
 try {
@@ -101,11 +105,19 @@ controls.setPose(start.x, start.z, start.yaw);
 
 let leaving = null;
 let leaveTimer = 0;
+const eye = new THREE.Vector3();
+const look = new THREE.Vector3();
 function go(door) {
   if (leaving || !door?.env) return;
   leaving = door;
   rememberDoor(door.env.id);
-  fade.to(1, renderer.xr.isPresenting ? 0.3 : 0.4, () => location.assign(door.env.url));
+  // The link tells the environment how the visitor came through, so it can carry the view on.
+  camera.getWorldPosition(eye);
+  camera.getWorldDirection(look);
+  const xr = renderer.xr.isPresenting;
+  const pose = doorPose(L, door, eye.x, eye.z, look.x, look.y, look.z);
+  const url = doorLink(door.env, { here: location.href, hall: L.hall, pose, xr });
+  fade.to(1, xr ? 0.3 : 0.4, () => location.assign(url));
   // Still here a while later (the navigation was stopped or failed): come back.
   clearTimeout(leaveTimer);
   leaveTimer = setTimeout(() => arrive(door), 12000);

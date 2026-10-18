@@ -73,9 +73,53 @@ Doors fill the hall from the entrance, left then right, and the hall gets longer
 does. A preview is the room seen through the doorway. A screenshot taken at eye height, looking
 straight ahead, works best: its horizon is placed at eye level, a little above the middle.
 
+The `url` may have a query of its own, but not the parameters below, which the hallway adds (a
+test checks).
+
+## Going in
+
+A door opens its environment's `url` with the visit added to the query, so the environment can
+carry the view on from the doorway. Walking through vrlbry's door a little right of centre,
+turned slightly to the right and looking a little down, opens:
+
+```
+https://ariamokr.github.io/vrlbry/?place=%7Egutenberg_en_all_2025-11&from=hallway&back=https%3A%2F%2Fariamokr.github.io%2Fhallway%2F%3Ffrom%3Dvrlbry&dx=0.12&yaw=-8&pitch=-3&dw=1.1&dh=2.25&glow=d9b26a
+```
+
+| Parameter | Example | Meaning |
+|---|---|---|
+| `from` | `hallway` | Who sent the visitor. |
+| `back` | `https://ariamokr.github.io/hallway/?from=vrlbry` | The way back: a link to it brings the visitor out in front of this door. |
+| `dx` | `0.12` | Where the visitor went through: metres from the doorway's centre, + to their right as they face in. Always within the opening. |
+| `yaw` | `-8` | Which way they faced: degrees from straight in, + to the left (as three.js's `rotation.y`), from -90 to 90. |
+| `pitch` | `-3` | How far up they looked, in degrees, + up. Left out in VR, where the headset gives it. |
+| `dw`, `dh` | `1.1`, `2.25` | The doorway's width and height in metres. |
+| `glow` | `d9b26a` | The doorway's colour (the door's `color`), hex without the `#`. |
+
+`dx`, `yaw` and `pitch` are there only when the visitor goes in through the doorway in 3D, by
+walking through it or by pointing at it. Pointing from across the hall gives the pose they
+pointed from, with `dx` kept within the opening. The doors list beside the view sends the rest
+without them, and the `<noscript>` list links to the bare `url`.
+
+An environment can use them to:
+
+- **Carry the view on.** The doorway shows the environment's preview as if it was taken from the
+  threshold at eye height (1.6 m), facing straight in. Arriving the visitor where the preview was
+  taken, moved `dx` sideways and turned by `yaw`, continues what they saw through the doorway.
+- **Draw its own door back**, `dw` by `dh`, glowing in `glow`, leading to `back`.
+- **Read them once.** Take them off the address with `history.replaceState` after reading them,
+  so a reload, Back or a shared link doesn't repeat the arrival. Reading `location.search` takes
+  no time, so it doesn't delay the VR hand-over (below).
+
+An environment that ignores them loses nothing: they are ordinary query parameters. The VR
+movement choices from the control panel are not in the link: they are in `localStorage` under
+`hallway.nav` (`{"move":"smooth","turn":"snap"}`), which environments on `ariamokr.github.io` can
+read.
+
 ## Linking back
 
-An environment brings visitors back by linking to the hallway with its own id:
+An environment brings visitors back by linking to the hallway with its own id, the URL a door's
+link gives as `back`:
 
 ```
 https://ariamokr.github.io/hallway/?from=vrlbry

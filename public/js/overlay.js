@@ -33,13 +33,17 @@ function el(tag, attrs = {}, ...children) {
 }
 
 export class Overlay {
-  /** @param {Array} envs @param {(env) => void} onLeave called when a door's link is followed */
-  constructor(envs, { onLeave = () => {} } = {}) {
+  /**
+   * @param {Array} envs
+   * @param {(env) => string} href the link a door opens (link.js)
+   * @param {(env) => void} onLeave called when a door's link is followed
+   */
+  constructor(envs, { href = (env) => env.url, onLeave = () => {} } = {}) {
     this.root = document.getElementById('overlay');
     this.links = new Map();
     const list = el('ul', { class: 'doors', id: 'doors' });
     for (const env of envs) {
-      const a = el('a', { href: env.url, style: `--door:${env.color}` }, el('span', { class: 'door-title' }, env.title), el('span', { class: 'door-sub' }, env.subtitle || ''));
+      const a = el('a', { href: href(env), style: `--door:${env.color}` }, el('span', { class: 'door-title' }, env.title), el('span', { class: 'door-sub' }, env.subtitle || ''));
       a.addEventListener('click', () => onLeave(env));
       this.links.set(env.id, a);
       list.append(el('li', {}, a));

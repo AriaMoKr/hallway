@@ -6,6 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ENVIRONMENTS } from '../public/js/environments.js';
+import { LINK_PARAMS } from '../public/js/link.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', 'public');
 const html = readFileSync(join(root, 'index.html'), 'utf8');
@@ -21,6 +22,7 @@ test('every environment is complete and its id unique', () => {
     assert.equal(new URL(e.url).protocol, 'https:', `${e.id}: url`);
     if (e.preview) assert.equal(new URL(e.preview).protocol, 'https:', `${e.id}: preview`);
     assert.match(e.color, /^#[0-9a-f]{6}$/i, `${e.id}: color`);
+    for (const k of LINK_PARAMS) assert.ok(!new URL(e.url).searchParams.has(k), `${e.id}: url uses ${k}, which the hallway adds`);
   }
 });
 
