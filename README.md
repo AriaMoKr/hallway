@@ -55,8 +55,9 @@ Add an entry to [`public/js/environments.js`](public/js/environments.js), and a 
 ```js
 {
   id: 'garden',                         // short, unique; used in ?from=garden
-  title: 'Garden',                      // on the door's signs
-  subtitle: 'A walled garden at dusk',  // on the plaque beside it
+  title: 'Garden',                      // on the plaque beside the door
+  subtitle: 'A walled garden at dusk',  // under it
+  sign: 'Garden',                       // optional: the kind of place, over the door (else the title)
   url: 'https://example.org/garden/',
   preview: 'https://example.org/garden/social.jpg', // optional; 2:1, readable cross-origin
   color: '#7fc4a0',                     // the doorway's glow

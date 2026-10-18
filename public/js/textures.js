@@ -303,16 +303,17 @@ export function plaqueTexture(env) {
   return texture(c);
 }
 
-/** The sign hanging out over an open door, read from down the hall. 0.62 × 0.20 m. */
+/** The sign hanging out over an open door, read from down the hall: what kind of place it is. 0.62 × 0.20 m. */
 export function bladeTexture(env) {
+  const text = env.sign || env.title;
   const W = 512, H = 166;
   const c = canvas(W, H), g = c.getContext('2d');
   enamel(g, W, H, 8);
   g.textAlign = 'center';
   g.textBaseline = 'middle';
   g.fillStyle = GOLD;
-  fit(g, env.title, W - 70, 86, '600');
-  g.fillText(env.title, W / 2, H / 2 + 4);
+  fit(g, text, W - 70, 86, '600');
+  g.fillText(text, W / 2, H / 2 + 4);
   return texture(c);
 }
 

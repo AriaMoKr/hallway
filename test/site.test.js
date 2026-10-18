@@ -17,6 +17,7 @@ test('every environment is complete and its id unique', () => {
     assert.ok(!ids.has(e.id), `duplicate id ${e.id}`);
     ids.add(e.id);
     assert.ok(e.title, `${e.id}: title`);
+    if ('sign' in e) assert.ok(typeof e.sign === 'string' && e.sign.trim(), `${e.id}: sign`);
     assert.equal(new URL(e.url).protocol, 'https:', `${e.id}: url`);
     if (e.preview) assert.equal(new URL(e.preview).protocol, 'https:', `${e.id}: preview`);
     assert.match(e.color, /^#[0-9a-f]{6}$/i, `${e.id}: color`);

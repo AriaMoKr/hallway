@@ -39,3 +39,12 @@ test('the longest matching URL wins', () => {
   assert.equal(matchReferrer('https://a.example/sub/page', nested).id, 'sub');
   assert.equal(matchReferrer('https://a.example/other', nested).id, 'site');
 });
+
+test('the real doors: a page anywhere in an environment names its door, whatever its URL\'s query', async () => {
+  const { ENVIRONMENTS } = await import('../public/js/environments.js');
+  for (const e of ENVIRONMENTS) {
+    const u = new URL(e.url);
+    assert.equal(matchReferrer(`${u.origin}${u.pathname}`, ENVIRONMENTS)?.id, e.id, e.id);
+    assert.equal(matchReferrer(e.url, ENVIRONMENTS)?.id, e.id, e.id);
+  }
+});
