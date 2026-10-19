@@ -166,7 +166,7 @@ navigator.xr?.addEventListener('sessiongranted', () => {
 ```
 
 Without that listener, the visitor arrives at the environment's 2D page and presses its Enter VR
-button. vrlbry listens; Breadboard 8-bit's VR view does not yet.
+button. vrlbry and Breadboard 8-bit's VR view both listen.
 
 The hand-over has two limits, measured on a Quest with Quest Browser 152 (vrlbry,
 [`7eca62b`](https://github.com/AriaMoKr/vrlbry/commit/7eca62b)):
