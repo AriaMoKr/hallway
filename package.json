@@ -23,7 +23,9 @@
     "test": "node --test \"test/*.test.js\""
   },
   "dependencies": {
-    "three": "0.186.1"
+    "layersharedsession": "github:AriaMoKr/layersharedsession#c6420409f1e742a1cfaf30646106812f666bca2b",
+    "three": "0.186.1",
+    "trystero": "0.26.0"
   },
   "devDependencies": {
     "iwer": "^2.5.0"

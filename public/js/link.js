@@ -5,7 +5,7 @@
 export const HALLWAY_ID = 'hallway';
 
 /** The query parameters the hallway adds to a door's URL. A door's own URL must not use them. */
-export const LINK_PARAMS = ['from', 'back', 'dx', 'yaw', 'pitch', 'dw', 'dh', 'glow'];
+export const LINK_PARAMS = ['from', 'back', 'dx', 'yaw', 'pitch', 'dw', 'dh', 'glow', 'room'];
 
 const DEG = 180 / Math.PI;
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
@@ -37,12 +37,15 @@ export function doorPose(L, door, x, z, dx, dy, dz) {
  * @param {{doorWidth: number, doorHeight: number}} o.hall
  * @param {{across: number, yaw: number, pitch: number}} [o.pose]  doorPose; none for the doors list
  * @param {boolean} [o.xr]  in VR the headset gives the pitch, so it is left out
+ * @param {string|null} [o.room]  the shared session the visitor is in (together.js): the
+ *   environment's link and the way back both carry it, so the visitor stays in the session
  */
-export function doorLink(env, { here, hall, pose = null, xr = false }) {
+export function doorLink(env, { here, hall, pose = null, xr = false, room = null }) {
   const back = new URL(here);
   back.search = '';
   back.hash = '';
   back.searchParams.set('from', env.id);
+  if (room) back.searchParams.set('room', room);
   const url = new URL(env.url);
   const q = url.searchParams;
   q.set('from', HALLWAY_ID);
@@ -55,5 +58,6 @@ export function doorLink(env, { here, hall, pose = null, xr = false }) {
   q.set('dw', num(hall.doorWidth, 2));
   q.set('dh', num(hall.doorHeight, 2));
   q.set('glow', env.color.replace(/^#/, '').toLowerCase());
+  if (room) q.set('room', room);
   return url.href;
 }

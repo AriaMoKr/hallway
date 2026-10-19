@@ -1,7 +1,7 @@
 // The site as published: the environments list, the page, and every client module.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -46,12 +46,41 @@ test('every client module parses', () => {
   }
 });
 
-test('client modules import only three and each other', () => {
+test('client modules import only three, the shared-session layer and each other', () => {
+  const layer = /^layersharedsession\/[a-z]+\.js$/;
   for (const f of readdirSync(join(root, 'js'))) {
     if (!f.endsWith('.js')) continue;
     const src = readFileSync(join(root, 'js', f), 'utf8');
-    for (const m of src.matchAll(/^import\s.*?from\s+'([^']+)'/gms)) {
-      assert.ok(m[1] === 'three' || m[1].startsWith('./'), `${f} imports ${m[1]}`);
+    for (const m of src.matchAll(/(?:^import\s.*?from\s+|import\()'([^']+)'/gms)) {
+      assert.ok(m[1] === 'three' || layer.test(m[1]) || m[1].startsWith('./'), `${f} imports ${m[1]}`);
+      // The layer's modules are the ones tools/vendor.mjs copies from the package.
+      if (layer.test(m[1])) assert.ok(existsSync(join(packageDir('layersharedsession'), 'public', 'js', m[1].split('/')[1])), `${f}: no ${m[1]} in the package (npm install?)`);
     }
   }
 });
+
+test('the import map maps everything the shared session loads to its copy in vendor/', () => {
+  const { imports } = JSON.parse(html.match(/<script type="importmap">(.*?)<\/script>/s)[1]);
+  assert.deepEqual(Object.keys(imports).sort(), ['@noble/secp256k1', '@trystero-p2p/core', 'layersharedsession/', 'three', 'trystero']);
+  for (const url of Object.values(imports)) assert.match(url, /^\.\/vendor\//);
+  if (!existsSync(join(root, 'vendor'))) return; // not installed yet
+  for (const [name, url] of Object.entries(imports)) {
+    const path = join(root, url);
+    assert.ok(existsSync(path), `${name}: ${url} missing (npm install)`);
+  }
+  // Every bare import in the vendored session modules is one the map knows.
+  for (const dir of ['layersharedsession', 'trystero-core', 'trystero-nostr', 'noble-secp256k1']) {
+    for (const f of readdirSync(join(root, 'vendor', dir))) {
+      if (!/\.m?js$/.test(f)) continue;
+      const src = readFileSync(join(root, 'vendor', dir, f), 'utf8');
+      for (const m of src.matchAll(/(?:^|\n)\s*(?:import|export)[^'"\n;]*?from\s*['"]([^'"]+)['"]/g)) {
+        if (m[1].startsWith('./')) assert.ok(existsSync(join(root, 'vendor', dir, m[1])), `${dir}/${f}: ${m[1]}`);
+        else assert.ok(m[1] in imports || Object.keys(imports).some((k) => k.endsWith('/') && m[1].startsWith(k)), `${dir}/${f} imports ${m[1]}, which the import map lacks`);
+      }
+    }
+  }
+});
+
+function packageDir(name) {
+  return join(root, '..', 'node_modules', name);
+}

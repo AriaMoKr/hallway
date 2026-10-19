@@ -1,6 +1,7 @@
-// The control panel on the wall (layout.js PANEL): Enter / Exit VR, and how to move and turn in
-// VR. Its canvas is redrawn only when what it shows changes (a setting, a session, the button
-// pointed at), never per frame.
+// The control panel on the wall (layout.js PANEL): Enter / Exit VR, how to move and turn in VR, and
+// the shared session (together.js): Start / Leave, who else is in it, and its invite link to read
+// out. Its canvas is redrawn only when what it shows changes (a setting, a session, the button
+// pointed at, someone coming or going), never per frame.
 import * as THREE from 'three';
 import { PANEL, PANEL_PX, PANEL_BUTTONS } from './layout.js';
 import { GOLD, SANS, SERIF, enamel } from './textures.js';
@@ -11,6 +12,17 @@ const HINTS = {
   teleport: 'Left stick forward, aim, let go: teleport',
   smooth: 'Left stick: walk · trigger at the floor: teleport',
 };
+const SESSION_LABELS = { on: 'Leave shared session', off: 'Start shared session' };
+const KEYS = ['vr', 'move', 'turn', 'room', 'link', 'here', 'away'];
+
+/** Who else is in the session, in a few words. */
+export function companyText(here, away) {
+  if (!here && !away) return 'Nobody else yet';
+  const parts = [];
+  if (here) parts.push(`${here} here`);
+  if (away) parts.push(`${away} elsewhere`);
+  return parts.join(' · ');
+}
 
 export class ControlPanel {
   /** @param {{ halfWidth: number, color: THREE.Color, anisotropy?: number }} o */
@@ -26,16 +38,20 @@ export class ControlPanel {
     this.mesh.name = 'control panel';
     this.mesh.position.set(PANEL.side * (halfWidth - PANEL.depth), PANEL.y, PANEL.z);
     this.mesh.rotation.y = -PANEL.side * Math.PI / 2;
-    this.state = { vr: 'none', move: 'smooth', turn: 'snap' };
+    this.state = { vr: 'none', move: 'smooth', turn: 'snap', room: null, link: '', here: 0, away: 0 };
     this.hover = null;
     this._draw();
   }
 
-  /** What it shows: vr is 'exit' (in VR), 'enter' (VR available) or 'none'; move and turn as in settings.js. */
+  /**
+   * What it shows, all or part of it: vr is 'exit' (in VR), 'enter' (VR available) or 'none'; move
+   * and turn as in settings.js; room is the shared session's (null when not in one), link its
+   * invite link, here and away how many others are in the hallway and elsewhere in it.
+   */
   set(state) {
-    const s = this.state;
-    if (s.vr === state.vr && s.move === state.move && s.turn === state.turn) return;
-    this.state = { vr: state.vr, move: state.move, turn: state.turn };
+    const next = { ...this.state, ...state };
+    if (KEYS.every((k) => next[k] === this.state[k])) return;
+    this.state = next;
     this._draw();
   }
 
@@ -64,6 +80,8 @@ export class ControlPanel {
       if (id === 'vr') {
         label = VR_LABELS[this.state.vr];
         disabled = this.state.vr === 'none';
+      } else if (id === 'session') {
+        label = SESSION_LABELS[this.state.room ? 'on' : 'off'];
       } else {
         const [group, value] = id.split(':');
         label = LABELS[id];
@@ -86,6 +104,33 @@ export class ControlPanel {
     g.font = `18px ${SANS}`;
     g.textAlign = 'center';
     g.fillText(HINTS[this.state.move], W / 2, 330);
+
+    // The shared session.
+    g.fillStyle = 'rgba(224,187,114,0.35)';
+    g.fillRect(32, 354, W - 64, 2);
+    g.textAlign = 'left';
+    g.fillStyle = GOLD;
+    g.font = `600 26px ${SERIF}`;
+    g.fillText('Together', 32, 384);
+    if (this.state.room) {
+      g.textAlign = 'right';
+      g.fillStyle = '#efe5cf';
+      g.font = `20px ${SANS}`;
+      g.fillText(companyText(this.state.here, this.state.away), W - 32, 385);
+    }
+    g.textAlign = 'center';
+    g.fillStyle = '#b9a98d';
+    const note = this.state.room ? this.state.link : 'Start one, share its link, and see each other here';
+    fitText(g, note, W - 64, 18);
+    g.fillText(note, W / 2, 486);
     this.texture.needsUpdate = true;
+  }
+}
+
+/** Sets the largest font, from `size` px down, at which `text` fits `width`. */
+function fitText(g, text, width, size) {
+  for (let s = size; s >= 12; s--) {
+    g.font = `${s}px ${SANS}`;
+    if (g.measureText(text).width <= width) return;
   }
 }

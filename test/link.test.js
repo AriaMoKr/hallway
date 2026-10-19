@@ -38,14 +38,15 @@ test('a pose from across the hall (pointing at the door) stays within the openin
 
 test("a door's link keeps the environment's URL and adds the visit to its query", () => {
   const pose = { across: 0.123, yaw: -8.4 * DEG, pitch: -3.2 * DEG };
-  const url = new URL(doorLink(env, { here, hall: HALL, pose }));
+  const url = new URL(doorLink(env, { here, hall: HALL, pose, room: 'k3vd-q8hn' }));
   assert.equal(url.origin + url.pathname, 'https://example.org/garden/');
   assert.equal(url.hash, '#gate');
   assert.ok(url.search.startsWith('?place=%7Edusk&'), url.search);
   assert.deepEqual([...url.searchParams.keys()], ['place', ...LINK_PARAMS]);
   const q = Object.fromEntries(url.searchParams);
   assert.equal(q.from, HALLWAY_ID);
-  assert.equal(q.back, 'https://ariamokr.github.io/hallway/?from=garden');
+  assert.equal(q.back, 'https://ariamokr.github.io/hallway/?from=garden&room=k3vd-q8hn');
+  assert.equal(q.room, 'k3vd-q8hn');
   assert.equal(q.dx, '0.12');
   assert.equal(q.yaw, '-8');
   assert.equal(q.pitch, '-3');
@@ -62,4 +63,10 @@ test('in VR the link leaves out the pitch; the doors list leaves out the pose; z
   const list = new URL(doorLink(env, { here, hall: HALL }));
   for (const k of ['dx', 'yaw', 'pitch']) assert.equal(list.searchParams.has(k), false, k);
   for (const k of ['from', 'back', 'dw', 'dh', 'glow']) assert.ok(list.searchParams.has(k), k);
+});
+
+test('outside a shared session neither the link nor the way back has a room', () => {
+  const url = new URL(doorLink(env, { here: 'https://ariamokr.github.io/hallway/?room=old', hall: HALL }));
+  assert.equal(url.searchParams.has('room'), false);
+  assert.equal(url.searchParams.get('back'), 'https://ariamokr.github.io/hallway/?from=garden');
 });
