@@ -27,19 +27,20 @@ export const PLAQUE = { offset: HALL.doorWidth / 2 + 0.46, width: 0.6 };
 
 /**
  * The control panel on the right wall near the entrance, between it and the first door's plaque:
- * Enter / Exit VR and how to move in VR. y and z are its centre; depth how far its face stands
- * out from the wall.
+ * Enter / Exit VR, how to move in VR, and the shared session (together.js). y and z are its
+ * centre; depth how far its face stands out from the wall.
  */
-export const PANEL = { side: 1, z: -2.2, y: 1.36, width: 0.56, height: 0.4, depth: 0.03 };
+export const PANEL = { side: 1, z: -2.2, y: 1.38, width: 0.56, height: 0.56, depth: 0.03 };
 
 /** The panel's canvas, and its buttons on it as [id, x0, y0, x1, y1] in canvas pixels (y down). */
-export const PANEL_PX = { width: 512, height: 366 };
+export const PANEL_PX = { width: 512, height: 512 };
 export const PANEL_BUTTONS = [
   ['vr', 32, 74, 480, 136],
   ['move:teleport', 160, 160, 314, 218],
   ['move:smooth', 326, 160, 480, 218],
   ['turn:snap', 160, 236, 314, 294],
   ['turn:smooth', 326, 236, 480, 294],
+  ['session', 32, 404, 480, 458],
 ];
 
 /** The button at (u, v) on the panel (0…1 from its bottom left, as castRay reports), or null. */

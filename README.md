@@ -46,10 +46,33 @@ it (or click it) to enter or exit VR, and to choose how to move in VR:
 The trigger (or a pinch) at the floor teleports in either mode, and every teleport blinks the
 view black for a moment. The choices are kept in this browser.
 
+## Together
+
+The panel's **Start shared session** makes a room and puts it in the address
+(`?room=k3vd-q8hn`). That address is the invitation: anyone who opens it joins the room and sees
+the others in the hallway, each as a head with a visor on its front, their hands in VR, a ring on
+the floor and their name. The panel shows the link to read out, and how many others are here and
+elsewhere in the session. On a screen, **Copy invite link** at the bottom right copies it.
+**Leave shared session** leaves it and takes the room out of the address.
+
+The doors keep the session going. A door's link carries the room (`room`, see
+[Going in](#going-in)), and so does its way back. Going through a door, the visitor leaves the
+room at once, so the others see them go. They rejoin when they come back, and on the other side
+too once an environment takes part (none does yet). A visitor in the session but on another page
+counts as elsewhere.
+
+It runs peer to peer over WebRTC, with no server of its own:
+[Trystero](https://github.com/dmotz/trystero) finds the other visitors through public Nostr
+relays. The layer on top, [AriaMoKr/layersharedsession](https://github.com/AriaMoKr/layersharedsession),
+loads only when a session starts. Its [test page](https://ariamokr.github.io/layersharedsession/),
+opened with the same `?room=`, lists everyone in the session with their round-trip times and
+logs who came and went. Names are set there for now: the hallway has no box for one, and every
+site on `ariamokr.github.io` shares it.
+
 ## Running it
 
 ```bash
-npm install     # three.js (and IWER, for emulating a headset), copied into public/vendor/
+npm install     # three.js, the shared-session layer and Trystero (and IWER, for emulating a headset), copied into public/vendor/
 npm start       # http://localhost:8088/
 npm test
 ```
@@ -122,6 +145,7 @@ https://ariamokr.github.io/vrlbry/?place=%7Egutenberg_en_all_2025-11&from=hallwa
 | `pitch` | `-3` | How far up they looked, in degrees, + up. Left out in VR, where the headset gives it. |
 | `dw`, `dh` | `1.1`, `2.25` | The doorway's width and height in metres. |
 | `glow` | `d9b26a` | The doorway's colour (the door's `color`), hex without the `#`. |
+| `room` | `k3vd-q8hn` | The shared session the visitor is in ([Together](#together)). `back` carries it too. Only in a session. |
 
 `dx`, `yaw` and `pitch` are there only when the visitor goes in through the doorway in 3D, by
 walking through it or by pointing at it. Pointing from across the hall gives the pose they
@@ -136,7 +160,11 @@ An environment can use them to:
 - **Draw its own door back**, `dw` by `dh`, glowing in `glow`, leading to `back`.
 - **Read them once.** Take them off the address with `history.replaceState` after reading them,
   so a reload, Back or a shared link doesn't repeat the arrival. Reading `location.search` takes
-  no time, so it doesn't delay the VR hand-over (below).
+  no time, so it doesn't delay the VR hand-over (below). Leave `room` in the address: it names
+  the session the page is in, and it is the invitation to it.
+- **Stay in the session.** With `room`, join the same room through
+  [layersharedsession](https://github.com/AriaMoKr/layersharedsession) (the same app id as the
+  hallway's, in `together.js`), and keep `room` on every link back.
 
 An environment that ignores them loses nothing: they are ordinary query parameters. The VR
 movement choices from the control panel are not in the link: they are in `localStorage` under
@@ -153,7 +181,8 @@ https://ariamokr.github.io/hallway/?from=vrlbry
 ```
 
 Without `?from=`, the hallway also recognizes a referrer from inside an environment's URL, and
-Back from an environment returns to the door the visitor left by.
+Back from an environment returns to the door the visitor left by. With `&room=`, as `back` has
+in a shared session, the visitor rejoins that session in the hallway.
 
 **Staying in VR across the trip.** When a page navigates during an immersive session, Quest
 Browser can grant the next page a session without a click: it fires `sessiongranted` on

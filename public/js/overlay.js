@@ -1,6 +1,7 @@
 // The page around the 3D view (not shown in a headset): the hallway's name and its doors as plain
 // links (for keyboards, screen readers and browsers without WebGL), a hint on how to move, the
-// Fullscreen and Enter VR buttons, the dot a gamepad aims with, and short messages.
+// Fullscreen and Enter VR buttons, Copy invite link while in a shared session, the dot a gamepad
+// aims with, and short messages.
 
 const COLLAPSED = 'hallway.doorsCollapsed';
 
@@ -40,6 +41,8 @@ export class Overlay {
    */
   constructor(envs, { href = (env) => env.url, onLeave = () => {} } = {}) {
     this.root = document.getElementById('overlay');
+    this.envs = envs;
+    this.href = href;
     this.links = new Map();
     const list = el('ul', { class: 'doors', id: 'doors' });
     for (const env of envs) {
@@ -55,7 +58,10 @@ export class Overlay {
     this.hint = el('p', { class: 'hint' });
     this.fullscreen = el('button', { class: 'pill', type: 'button', hidden: '' }, 'Fullscreen');
     this.vr = el('button', { class: 'pill vr', type: 'button', hidden: '' }, 'Enter VR');
-    this.buttons = el('div', { class: 'buttons' }, this.fullscreen, this.vr);
+    this.invite = el('button', { class: 'pill invite', type: 'button', hidden: '' }, 'Copy invite link');
+    this.invite.addEventListener('click', () => this._copyInvite());
+    this._inviteLink = '';
+    this.buttons = el('div', { class: 'buttons' }, this.invite, this.fullscreen, this.vr);
     this.dot = el('div', { class: 'aim', hidden: '', 'aria-hidden': 'true' });
     this.toasts = el('div', { class: 'toasts', role: 'status', 'aria-live': 'polite' });
     this.root.append(this.card, this.hint, this.buttons, this.dot, this.toasts);
@@ -87,6 +93,28 @@ export class Overlay {
   showVR(onClick) {
     this.vr.hidden = false;
     this.vr.addEventListener('click', onClick);
+  }
+
+  /** The shared session's invite link (together.js), or '' when not in one: hides the button. */
+  setInvite(link) {
+    this._inviteLink = link;
+    this.invite.hidden = !link;
+  }
+
+  async _copyInvite() {
+    const link = this._inviteLink;
+    if (!link) return;
+    try {
+      await navigator.clipboard.writeText(link);
+      this.toast('Invite link copied: anyone who opens it joins you here');
+    } catch {
+      prompt('Copy this link to invite others:', link);
+    }
+  }
+
+  /** Works out the doors' links again (they carry the shared session's room). */
+  refreshLinks() {
+    for (const env of this.envs) this.links.get(env.id)?.setAttribute('href', this.href(env));
   }
 
   showFullscreen(onClick) {

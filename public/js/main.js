@@ -1,6 +1,8 @@
 // The hallway: a corridor whose doors lead to other environments. Walk through a glowing doorway
 // (or click it, or point at it in VR and pull the trigger) and the page goes to that environment.
 // Coming back, from its link or with Back, puts the viewer in front of the door they left by.
+// A shared session (together.js), started from the control panel or joined from an invite link,
+// shows the others in it, and the doors carry it into the environments and back.
 import * as THREE from 'three';
 import { ENVIRONMENTS } from './environments.js';
 import { HALL, doorCrossed, doorSpawn } from './layout.js';
@@ -13,6 +15,8 @@ import { doorLink, doorPose } from './link.js';
 import { setAnisotropy } from './textures.js';
 import { loadNav, saveNav } from './settings.js';
 import { doorView, renderDoorView } from './door-view.js';
+import { Together } from './together.js';
+import { roomFromUrl } from 'layersharedsession/room.js';
 
 const params = new URLSearchParams(location.search);
 const LAST_DOOR = 'hallway.lastDoor';
@@ -46,8 +50,9 @@ function lastDoor() {
   }
 }
 
+let together = null; // the shared session, made once the scene is (below)
 const overlay = new Overlay(ENVIRONMENTS, {
-  href: (env) => doorLink(env, { here: location.href, hall: HALL }),
+  href: (env) => doorLink(env, { here: location.href, hall: HALL, room: together?.room ?? null }),
   onLeave: (env) => rememberDoor(env.id),
 });
 
@@ -116,7 +121,10 @@ function go(door) {
   camera.getWorldDirection(look);
   const xr = renderer.xr.isPresenting;
   const pose = doorPose(L, door, eye.x, eye.z, look.x, look.y, look.z);
-  const url = doorLink(door.env, { here: location.href, hall: L.hall, pose, xr });
+  const url = doorLink(door.env, { here: location.href, hall: L.hall, pose, xr, room: together.room });
+  // Leave the shared session now, so the others see the visitor go at once (the link carries its
+  // room on); the fade gives the leaving message time to go out.
+  together.pause();
   fade.to(1, xr ? 0.3 : 0.4, () => location.assign(url));
   // Still here a while later (the navigation was stopped or failed): come back.
   clearTimeout(leaveTimer);
@@ -131,6 +139,7 @@ function arrive(door) {
     const p = doorSpawn(L, door);
     controls.setPose(p.x, p.z, p.yaw);
   }
+  together.resume();
   fade.to(0, 0.6);
 }
 
@@ -139,6 +148,8 @@ window.addEventListener('pageshow', (e) => {
   const id = lastDoor();
   arrive(L.doors.find((d) => d.env && d.env.id === id) || leaving);
 });
+// Leaving the page another way (a link, the address bar, closing it): leave the session too.
+window.addEventListener('pagehide', () => together.pause());
 
 controls.onSelect = (door, how) => {
   if (!door.env) {
@@ -233,12 +244,31 @@ navigator.xr?.addEventListener?.('sessiongranted', takeGranted);
 // ── The control panel on the wall ────────────────────────────────────────────
 
 function showPanel() {
-  hall.panel.set({ vr: renderer.xr.isPresenting ? 'exit' : vrSupported ? 'enter' : 'none', move: nav.move, turn: nav.turn });
+  const company = together ? together.company() : { here: 0, away: 0 };
+  hall.panel.set({
+    vr: renderer.xr.isPresenting ? 'exit' : vrSupported ? 'enter' : 'none',
+    move: nav.move,
+    turn: nav.turn,
+    room: together?.room ?? null,
+    link: together?.inviteLink.replace(/^https?:\/\//, '') ?? '',
+    here: company.here,
+    away: company.away,
+  });
 }
 showPanel();
 controls.onPanel = (id) => {
   if (id === 'vr') {
     if (renderer.xr.isPresenting || vrSupported) enterVR(); // enters, or exits when in VR
+    return;
+  }
+  if (id === 'session') {
+    if (together.room) {
+      together.stop();
+      overlay.toast('You left the shared session');
+    } else {
+      together.start();
+      overlay.toast('Shared session started: Copy invite link to bring others in', 5);
+    }
     return;
   }
   const [key, value] = id.split(':');
@@ -259,6 +289,19 @@ controls.onTeleport = (move) => {
   });
 };
 
+// ── The shared session ───────────────────────────────────────────────────────
+
+together = new Together({ scene, camera, renderer, hands: () => controls.hands });
+together.onChange = () => {
+  showPanel();
+  overlay.setInvite(together.active ? together.inviteLink : '');
+  overlay.refreshLinks();
+};
+together.onNotice = (text) => overlay.toast(text, 4);
+// An invite link, or a door's way back from an environment, names the room: join it.
+const invitedRoom = roomFromUrl(location.href);
+if (invitedRoom) together.start(invitedRoom);
+
 // ── The frame loop ───────────────────────────────────────────────────────────
 
 const head = new THREE.Vector3();
@@ -270,6 +313,7 @@ function step(dt) {
   controls.update(dt);
   camera.getWorldPosition(head);
   hall.update(time, dt, head, controls.hoverDoor);
+  together.update(performance.now());
   hall.panel.setHover(controls.hoverPanel);
   overlay.setHover(controls.hoverDoor?.env ?? null);
   overlay.setAim(controls.padActive && !renderer.xr.isPresenting, !!(controls.hoverDoor?.env || controls.hoverPanel));
@@ -297,7 +341,7 @@ fade.to(0, 0.8);
 
 // For scripted testing. A hidden page gets no animation frames: drive it with tick().
 window.__hallway = {
-  THREE, renderer, scene, camera, rig, hall, layout: L, controls, overlay, fade, xrDevice, go, enterVR,
+  THREE, renderer, scene, camera, rig, hall, layout: L, controls, overlay, fade, xrDevice, go, enterVR, together,
   /**
    * The view out of every open door (door-view.js), once the doorways' pictures have loaded:
    * [{ id, jpeg (a data: URL), params }], for tools/door-views.mjs.
