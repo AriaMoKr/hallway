@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { HALL, PANEL, PANEL_BUTTONS, PANEL_PX, PLAQUE, layoutHall, clampToHall, doorCrossed, doorSpawn, castRay, panelButtonAt } from '../public/js/layout.js';
+import { HALL, PANEL, PANEL_BUTTONS, PANEL_PX, PLAQUE, layoutHall, clampToHall, doorCrossed, doorSpawn, entranceSpawn, castRay, panelButtonAt } from '../public/js/layout.js';
+import { hash } from '../public/vendor/layersharedsession/identity.js';
 
 const env = (id) => ({ id, title: id, url: `https://example.org/${id}/`, color: '#ffffff' });
 
@@ -103,5 +104,59 @@ test('castRay finds the control panel and the button pointed at', () => {
   // And of every plaque on its wall, open or not yet, with room for both frames between them.
   for (const d of L.doors) {
     if (d.side === PANEL.side) assert.ok(Math.abs(d.z + PLAQUE.offset - PANEL.z) > PLAQUE.width / 2 + PANEL.width / 2 + 0.25, `clear of door ${d.index}'s plaque`);
+  }
+});
+
+test('the panel hangs clear of the chair rail painted at 1 m', () => {
+  assert.ok(PANEL.y - PANEL.height / 2 - 0.025 > 1.05, 'its frame stops above the rail');
+  assert.ok(PANEL.y + PANEL.height / 2 < 1.95, 'and its top is in reach');
+  assert.ok(Math.abs(PANEL_PX.width / PANEL_PX.height - PANEL.width / PANEL.height) < 1e-9, 'its canvas has its shape');
+});
+
+/** The different spots spawn(key) gives over many keys. */
+function spots(spawn) {
+  const out = [];
+  for (let key = 0; key < 500; key++) {
+    const s = spawn(key);
+    if (!out.some((o) => o.x === s.x && o.z === s.z)) out.push(s);
+  }
+  return out;
+}
+const apart = (list) => Math.min(...list.flatMap((a, i) => list.slice(i + 1).map((b) => Math.hypot(a.x - b.x, a.z - b.z))));
+
+test('arrivals at the entrance spread over spots in the hall, the same key always the same spot', () => {
+  const L = layoutHall([env('a'), env('b')]);
+  const list = spots((k) => entranceSpawn(L, k));
+  assert.ok(list.length >= 8 && list.length <= 10, `${list.length} spots`);
+  for (const s of list) {
+    const c = clampToHall(L, s.x, s.z);
+    assert.ok(c.x === s.x && c.z === s.z, `(${s.x}, ${s.z}) is where one may stand`);
+    assert.equal(doorCrossed(L, s.x, s.z), null);
+    assert.equal(s.yaw, L.spawn.yaw, 'facing down the hall');
+    assert.ok(s.z < L.zStart && s.z > -2.2, 'near the entrance');
+  }
+  assert.ok(apart(list) >= 0.5, `spots ${apart(list)} m apart`);
+  const id = 'k3vd8hnq2w0x';
+  assert.deepEqual(entranceSpawn(L, hash(id)), entranceSpawn(L, hash(id)), 'the same member, the same spot');
+  // A handful of member ids don't all land on one spot.
+  const used = new Set(['aaaaaaaaaaaa', 'bbbbbbbbbbbb', 'cccccccccccc', 'dddddddddddd', 'eeeeeeeeeeee'].map((m) => JSON.stringify(entranceSpawn(L, hash(m)))));
+  assert.ok(used.size >= 3, `${used.size} spots for 5 visitors`);
+});
+
+test('coming back out of a door spreads too: within 0.4 m of its centre, facing down the hall', () => {
+  const L = layoutHall([env('a'), env('b'), env('c')]);
+  for (const door of L.doors.filter((d) => d.env)) {
+    assert.deepEqual(doorSpawn(L, door, 0), doorSpawn(L, door), 'key 0 is the old spot, the door\'s centre');
+    const list = spots((k) => doorSpawn(L, door, k));
+    assert.ok(list.length >= 3, `${list.length} spots`);
+    for (const s of list) {
+      assert.ok(Math.abs(s.z - door.z) <= 0.4 + 1e-9, 'within 0.4 m of the door\'s centre');
+      const c = clampToHall(L, s.x, s.z);
+      assert.ok(c.x === s.x && c.z === s.z, 'in the hall');
+      assert.equal(doorCrossed(L, s.x, s.z), null, 'not in the doorway');
+      assert.ok(door.side * s.x < L.halfWidth - 0.5, 'a step out from the wall');
+      assert.equal(s.yaw, door.side * 0.5, 'turned away from the door, down the hall');
+    }
+    assert.ok(apart(list) >= 0.39, `spots ${apart(list)} m apart`);
   }
 });

@@ -5,7 +5,7 @@
 // shows the others in it, and the doors carry it into the environments and back.
 import * as THREE from 'three';
 import { ENVIRONMENTS } from './environments.js';
-import { HALL, doorCrossed, doorSpawn } from './layout.js';
+import { HALL, doorCrossed, doorSpawn, entranceSpawn } from './layout.js';
 import { buildHall } from './hall.js';
 import { Controls } from './controls.js';
 import { Fade } from './fade.js';
@@ -16,6 +16,7 @@ import { setAnisotropy } from './textures.js';
 import { loadNav, saveNav } from './settings.js';
 import { doorView, renderDoorView } from './door-view.js';
 import { Together } from './together.js';
+import { hash, loadIdentity } from 'layersharedsession/identity.js';
 import { roomFromUrl } from 'layersharedsession/room.js';
 
 const params = new URLSearchParams(location.search);
@@ -96,12 +97,22 @@ const nav = loadNav();
 controls.setNav(nav);
 const fade = new Fade(camera, 1);
 
-// Where to start: in front of the door just come back through, else at the entrance.
+// Where to start: in front of the door just come back through, else at the entrance. Arrivals
+// spread out by who they are (the shared session's member id, kept for the tab before any session
+// starts), so two who arrive together don't stand inside each other.
+const browserStorage = (name) => {
+  try {
+    return window[name];
+  } catch {
+    return null;
+  }
+};
+const spawnKey = hash(loadIdentity(browserStorage('sessionStorage'), browserStorage('localStorage')).memberId);
 function startPose() {
   const navType = performance.getEntriesByType?.('navigation')?.[0]?.type;
   const id = arrivalDoorId({ search: location.search, referrer: document.referrer, navType, lastDoorId: lastDoor(), envs: ENVIRONMENTS });
   const door = id && L.doors.find((d) => d.env?.id === id);
-  return door ? doorSpawn(L, door) : L.spawn;
+  return door ? doorSpawn(L, door, spawnKey) : entranceSpawn(L, spawnKey);
 }
 const start = startPose();
 controls.setPose(start.x, start.z, start.yaw);
@@ -136,7 +147,7 @@ function arrive(door) {
   leaving = null;
   clearTimeout(leaveTimer);
   if (door) {
-    const p = doorSpawn(L, door);
+    const p = doorSpawn(L, door, spawnKey);
     controls.setPose(p.x, p.z, p.yaw);
   }
   together.resume();
@@ -244,15 +255,14 @@ navigator.xr?.addEventListener?.('sessiongranted', takeGranted);
 // ── The control panel on the wall ────────────────────────────────────────────
 
 function showPanel() {
-  const company = together ? together.company() : { here: 0, away: 0 };
   hall.panel.set({
     vr: renderer.xr.isPresenting ? 'exit' : vrSupported ? 'enter' : 'none',
     move: nav.move,
     turn: nav.turn,
     room: together?.room ?? null,
     link: together?.inviteLink.replace(/^https?:\/\//, '') ?? '',
-    here: company.here,
-    away: company.away,
+    status: together?.room ? together.status : '',
+    people: together?.active ? together.panelPeople() : '',
   });
 }
 showPanel();
@@ -295,9 +305,18 @@ together = new Together({ scene, camera, renderer, hands: () => controls.hands }
 together.onChange = () => {
   showPanel();
   overlay.setInvite(together.active ? together.inviteLink : '');
+  overlay.setTogether(together.active ? { active: true, self: together.self, status: together.status, people: together.people() } : { active: false });
   overlay.refreshLinks();
 };
 together.onNotice = (text) => overlay.toast(text, 4);
+overlay.onName = (name) => together.setName(name);
+// A wave: the Wave button, or a controller's grip in VR (which pulses, so the waver feels it go).
+overlay.onWave = () => {
+  if (together.wave()) overlay.toast('You waved', 2);
+};
+controls.onSqueeze = (hand) => {
+  if (together.wave()) hand.source?.gamepad?.hapticActuators?.[0]?.pulse?.(0.6, 60);
+};
 // An invite link, or a door's way back from an environment, names the room: join it.
 const invitedRoom = roomFromUrl(location.href);
 if (invitedRoom) together.start(invitedRoom);

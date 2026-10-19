@@ -1,7 +1,8 @@
 // The control panel on the wall (layout.js PANEL): Enter / Exit VR, how to move and turn in VR, and
-// the shared session (together.js): Start / Leave, who else is in it, and its invite link to read
-// out. Its canvas is redrawn only when what it shows changes (a setting, a session, the button
-// pointed at, someone coming or going), never per frame.
+// the shared session (together.js): Start / Leave, how it's going, its invite link to read out, and
+// who else is in it and where (up to four, then "+N more"). Its canvas is redrawn only when what it
+// shows changes (a setting, a session, the button pointed at, someone coming, going or renaming),
+// never per frame: the people come as a string (presence.js), and round trips stay off it.
 import * as THREE from 'three';
 import { PANEL, PANEL_PX, PANEL_BUTTONS } from './layout.js';
 import { GOLD, SANS, SERIF, enamel } from './textures.js';
@@ -13,16 +14,7 @@ const HINTS = {
   smooth: 'Left stick: walk · trigger at the floor: teleport',
 };
 const SESSION_LABELS = { on: 'Leave shared session', off: 'Start shared session' };
-const KEYS = ['vr', 'move', 'turn', 'room', 'link', 'here', 'away'];
-
-/** Who else is in the session, in a few words. */
-export function companyText(here, away) {
-  if (!here && !away) return 'Nobody else yet';
-  const parts = [];
-  if (here) parts.push(`${here} here`);
-  if (away) parts.push(`${away} elsewhere`);
-  return parts.join(' · ');
-}
+const KEYS = ['vr', 'move', 'turn', 'room', 'link', 'status', 'people'];
 
 export class ControlPanel {
   /** @param {{ halfWidth: number, color: THREE.Color, anisotropy?: number }} o */
@@ -38,7 +30,7 @@ export class ControlPanel {
     this.mesh.name = 'control panel';
     this.mesh.position.set(PANEL.side * (halfWidth - PANEL.depth), PANEL.y, PANEL.z);
     this.mesh.rotation.y = -PANEL.side * Math.PI / 2;
-    this.state = { vr: 'none', move: 'smooth', turn: 'snap', room: null, link: '', here: 0, away: 0 };
+    this.state = { vr: 'none', move: 'smooth', turn: 'snap', room: null, link: '', status: '', people: '' };
     this.hover = null;
     this._draw();
   }
@@ -46,7 +38,7 @@ export class ControlPanel {
   /**
    * What it shows, all or part of it: vr is 'exit' (in VR), 'enter' (VR available) or 'none'; move
    * and turn as in settings.js; room is the shared session's (null when not in one), link its
-   * invite link, here and away how many others are in the hallway and elsewhere in it.
+   * invite link, status how it's going, people who else is in it (presence.js peopleText).
    */
   set(state) {
     const next = { ...this.state, ...state };
@@ -115,22 +107,45 @@ export class ControlPanel {
     if (this.state.room) {
       g.textAlign = 'right';
       g.fillStyle = '#efe5cf';
-      g.font = `20px ${SANS}`;
-      g.fillText(companyText(this.state.here, this.state.away), W - 32, 385);
+      fitText(g, this.state.status, W - 210, 20);
+      g.fillText(this.state.status, W - 32, 385);
     }
     g.textAlign = 'center';
     g.fillStyle = '#b9a98d';
     const note = this.state.room ? this.state.link : 'Start one, share its link, and see each other here';
     fitText(g, note, W - 64, 18);
     g.fillText(note, W / 2, 486);
+
+    // Who else is in it, and where.
+    const rows = this.state.room && this.state.people ? this.state.people.split('\n') : [];
+    rows.forEach((row, i) => {
+      const y = 518 + i * 25;
+      const [name, place] = row.split('\t');
+      if (place === undefined) {
+        g.textAlign = 'left';
+        g.fillStyle = '#b9a98d';
+        g.font = `18px ${SANS}`;
+        g.fillText(name, 44, y);
+        return;
+      }
+      g.textAlign = 'right';
+      g.fillStyle = '#b9a98d';
+      fitText(g, place, 150, 18);
+      g.fillText(place, W - 44, y);
+      g.textAlign = 'left';
+      g.fillStyle = '#efe5cf';
+      g.font = `600 19px ${SANS}`;
+      fitText(g, name, W - 88 - 170, 19, '600 ');
+      g.fillText(name, 44, y);
+    });
     this.texture.needsUpdate = true;
   }
 }
 
 /** Sets the largest font, from `size` px down, at which `text` fits `width`. */
-function fitText(g, text, width, size) {
+function fitText(g, text, width, size, weight = '') {
   for (let s = size; s >= 12; s--) {
-    g.font = `${s}px ${SANS}`;
+    g.font = `${weight}${s}px ${SANS}`;
     if (g.measureText(text).width <= width) return;
   }
 }

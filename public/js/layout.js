@@ -27,13 +27,14 @@ export const PLAQUE = { offset: HALL.doorWidth / 2 + 0.46, width: 0.6 };
 
 /**
  * The control panel on the right wall near the entrance, between it and the first door's plaque:
- * Enter / Exit VR, how to move in VR, and the shared session (together.js). y and z are its
- * centre; depth how far its face stands out from the wall.
+ * Enter / Exit VR, how to move in VR, and the shared session (together.js): its status and who is
+ * in it. y and z are its centre, high enough that its frame clears the chair rail at 1 m; depth
+ * how far its face stands out from the wall.
  */
-export const PANEL = { side: 1, z: -2.2, y: 1.38, width: 0.56, height: 0.56, depth: 0.03 };
+export const PANEL = { side: 1, z: -2.2, y: 1.45, width: 0.56, height: 0.7, depth: 0.03 };
 
-/** The panel's canvas, and its buttons on it as [id, x0, y0, x1, y1] in canvas pixels (y down). */
-export const PANEL_PX = { width: 512, height: 512 };
+/** The panel's canvas (its shape), and its buttons on it as [id, x0, y0, x1, y1] in canvas pixels (y down). */
+export const PANEL_PX = { width: 512, height: 640 };
 export const PANEL_BUTTONS = [
   ['vr', 32, 74, 480, 136],
   ['move:teleport', 160, 160, 314, 218],
@@ -83,9 +84,39 @@ export function layoutHall(envs, hall = HALL) {
   };
 }
 
-/** Where someone coming back out of a door stands: in front of it, turned away from it and down the hall. */
-export function doorSpawn(L, door) {
-  return { x: door.side * (L.halfWidth - 0.85), z: door.z, yaw: door.side * 0.5 };
+// Where arrivals stand, spread out so that two who come at once (a shared session, together.js)
+// don't stand inside each other. A key, a visitor's member id hashed, picks the spot, so the same
+// visitor always gets the same one.
+/** At the entrance: [x, z], 0.6 m or more apart, the first row a little nearer than L.spawn. */
+const ENTRANCE_SPOTS = [-0.85, -1.5].flatMap((z) => [-0.9, -0.3, 0.3, 0.9].map((x) => [x, z]));
+/** In front of a door: [along the wall from its centre, out from the wall]; the first is the centre. */
+const DOOR_SPOTS = [0.85, 1.4].flatMap((out) => [0, -0.4, 0.4].map((along) => [along, out]));
+
+/** Which of n spots a key picks. Its bits are mixed first (MurmurHash3's finaliser): an FNV hash's
+ * low bits alone spread similar ids poorly. 0 picks the first. */
+function spot(key, n) {
+  let h = key >>> 0;
+  h ^= h >>> 16;
+  h = Math.imul(h, 0x85ebca6b);
+  h ^= h >>> 13;
+  h = Math.imul(h, 0xc2b2ae35);
+  h ^= h >>> 16;
+  return (h >>> 0) % n;
+}
+
+/** Where someone arriving at the entrance stands, by key, facing down the hall. */
+export function entranceSpawn(L, key) {
+  const [x, z] = ENTRANCE_SPOTS[spot(key, ENTRANCE_SPOTS.length)];
+  return { x, z, yaw: L.spawn.yaw };
+}
+
+/**
+ * Where someone coming back out of a door stands: in front of it (within 0.4 m of its centre, by
+ * key; key 0 is the centre), turned away from it and down the hall.
+ */
+export function doorSpawn(L, door, key = 0) {
+  const [along, out] = DOOR_SPOTS[spot(key, DOOR_SPOTS.length)];
+  return { x: door.side * (L.halfWidth - out), z: door.z + along, yaw: door.side * 0.5 };
 }
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);

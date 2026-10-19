@@ -53,6 +53,8 @@ export class Controls {
     this.onSelect = () => {};
     /** (button id) when a button of the control panel is pressed. */
     this.onPanel = () => {};
+    /** (hand) when a controller's grip is squeezed in VR (main.js: a wave in the shared session). */
+    this.onSqueeze = () => {};
     /** (move) for a teleport: main.js blinks the view around move(), which puts the viewer there. */
     this.onTeleport = (move) => move();
     /** The first time the viewer does anything (hides the hint). */
@@ -322,6 +324,7 @@ export class Controls {
     el.addEventListener('contextmenu', (e) => e.preventDefault());
     window.addEventListener('keydown', (e) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.target?.closest?.('input, textarea, select, [contenteditable]')) return; // typing a name
       const k = KEYS[e.code];
       if (!k) return;
       if (e.code.startsWith('Arrow')) e.preventDefault();
@@ -374,6 +377,7 @@ export class Controls {
         laser.visible = reticle.visible = false;
       });
       controller.addEventListener('select', () => this._xrSelect(hand));
+      controller.addEventListener('squeezestart', () => this.onSqueeze(hand));
       this.rig.add(controller);
       this.hands.push(hand);
     }

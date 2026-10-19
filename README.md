@@ -54,9 +54,29 @@ view black for a moment. The choices are kept in this browser.
 The panel's **Start shared session** makes a room and puts it in the address
 (`?room=k3vd-q8hn`). That address is the invitation: anyone who opens it joins the room and sees
 the others in the hallway, each as a head with a visor on its front, their hands in VR, a ring on
-the floor and their name. The panel shows the link to read out, and how many others are here and
-elsewhere in the session. On a screen, **Copy invite link** at the bottom right copies it.
-**Leave shared session** leaves it and takes the room out of the address.
+the floor and their name. Arrivals stand on different spots, at the entrance or in front of the
+door they came back through, so two who arrive together don't stand inside each other. On a
+screen, **Copy invite link** at the bottom right copies the link. **Leave shared session** leaves
+the room and takes it out of the address.
+
+While in a session:
+
+- **Your name.** The Together section under the doors list has your colour and your name, "Guest"
+  and four letters until you change it. Type a new one and press Enter. Set it before entering VR:
+  there is no typing in a headset. The name is kept for the tab and as this browser's name for new
+  tabs, on every site of `ariamokr.github.io` (the layer's test page and the environments that
+  take part too).
+- **Who's here.** The same section lists the others: their colour, name, where they are ("here" in
+  the hallway, an environment's title, or "elsewhere") and the round trip to them in ms. The panel
+  shows up to four of them and where they are, then "+N more", for VR.
+- **How it's going.** The status, in the section and on the panel: "Connecting…" while the session
+  starts, "Can't reach the relays" if none answers within 10 s, "Offline" when the browser is,
+  "Waiting for others" with nobody else in the room yet, else how many others are here and
+  elsewhere. "Couldn't connect to N visitors" means handshakes failed, usually a network that needs
+  a TURN relay (the layer's README, Limits).
+- **Wave.** The **Wave** button at the bottom right, or a controller's grip in VR (it pulses, so
+  you feel it go out), waves to everyone: your head bobs and your name lifts for a moment in their
+  hallway, and they get a toast saying you waved. Someone on another page gets the toast only.
 
 The doors keep the session going. A door's link carries the room (`room`, see
 [Going in](#going-in)), and so does its way back. Going through a door, the visitor leaves the
@@ -69,8 +89,7 @@ It runs peer to peer over WebRTC, with no server of its own:
 relays. The layer on top, [AriaMoKr/layersharedsession](https://github.com/AriaMoKr/layersharedsession),
 loads only when a session starts. Its [test page](https://ariamokr.github.io/layersharedsession/),
 opened with the same `?room=`, lists everyone in the session with their round-trip times and
-logs who came and went. Names are set there for now: the hallway has no box for one, and every
-site on `ariamokr.github.io` shares it.
+logs who came, went, renamed and waved. Its Wave and the hallway's reach each other.
 
 ## Running it
 

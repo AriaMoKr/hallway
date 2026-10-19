@@ -1,7 +1,8 @@
 // The page around the 3D view (not shown in a headset): the hallway's name and its doors as plain
 // links (for keyboards, screen readers and browsers without WebGL), a hint on how to move, the
-// Fullscreen and Enter VR buttons, Copy invite link while in a shared session, the dot a gamepad
-// aims with, and short messages.
+// Fullscreen and Enter VR buttons, while in a shared session its Together section (your name, how
+// it's going, who else is in it) and the Wave and Copy invite link buttons, the dot a gamepad aims
+// with, and short messages. Names come from other visitors: they go in as text, never as HTML.
 
 const COLLAPSED = 'hallway.doorsCollapsed';
 
@@ -55,13 +56,35 @@ export class Overlay {
     this.card = el('nav', { class: 'card', 'aria-label': 'Doors' }, el('header', {}, el('h1', { class: 'brand' }, 'Hallway'), this.toggle), list);
     this.toggle.addEventListener('click', () => this._collapse(!this.card.classList.contains('collapsed')));
     this._collapse(stored(COLLAPSED) === '1', false);
+    // The shared session: shown while in one, whether the doors list is folded or not.
+    /** (name) when the visitor renames themself; returns the name kept. */
+    this.onName = (name) => name;
+    this.onWave = () => {};
+    this.myDot = el('span', { class: 'dot', 'aria-hidden': 'true' });
+    this.myName = el('input', { class: 'my-name', type: 'text', maxlength: '24', autocomplete: 'off', spellcheck: 'false', 'aria-label': 'Your name in the shared session' });
+    this.myName.addEventListener('change', () => {
+      this.myName.value = this.onName(this.myName.value);
+    });
+    this.myName.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') this.myName.blur();
+    });
+    this.status = el('span', { class: 'together-status' });
+    this.people = el('ul', { class: 'people', 'aria-label': 'Others in the shared session' });
+    this.together = el('section', { class: 'together', hidden: '', 'aria-label': 'Shared session' },
+      el('header', {}, el('h2', {}, 'Together'), this.status),
+      el('label', { class: 'me' }, this.myDot, this.myName),
+      this.people,
+      el('p', { class: 'together-note' }, 'Set your name here before entering VR: there is no typing in a headset.'));
+    this.card.append(this.together);
     this.hint = el('p', { class: 'hint' });
     this.fullscreen = el('button', { class: 'pill', type: 'button', hidden: '' }, 'Fullscreen');
     this.vr = el('button', { class: 'pill vr', type: 'button', hidden: '' }, 'Enter VR');
     this.invite = el('button', { class: 'pill invite', type: 'button', hidden: '' }, 'Copy invite link');
     this.invite.addEventListener('click', () => this._copyInvite());
     this._inviteLink = '';
-    this.buttons = el('div', { class: 'buttons' }, this.invite, this.fullscreen, this.vr);
+    this.wave = el('button', { class: 'pill', type: 'button', hidden: '' }, 'Wave');
+    this.wave.addEventListener('click', () => this.onWave());
+    this.buttons = el('div', { class: 'buttons' }, this.wave, this.invite, this.fullscreen, this.vr);
     this.dot = el('div', { class: 'aim', hidden: '', 'aria-hidden': 'true' });
     this.toasts = el('div', { class: 'toasts', role: 'status', 'aria-live': 'polite' });
     this.root.append(this.card, this.hint, this.buttons, this.dot, this.toasts);
@@ -99,6 +122,25 @@ export class Overlay {
   setInvite(link) {
     this._inviteLink = link;
     this.invite.hidden = !link;
+  }
+
+  /**
+   * The shared session's section, and the Wave button: hidden when not in one.
+   * @param {{ active: boolean, self?: {name, color}, status?: string, people?: Array<{name, color, where, rtt}> }} t
+   */
+  setTogether({ active, self, status = '', people = [] }) {
+    this.together.hidden = !active;
+    this.wave.hidden = !active;
+    if (!active) return;
+    this.myDot.style.background = self.color;
+    if (document.activeElement !== this.myName) this.myName.value = self.name;
+    this.status.textContent = status;
+    this.people.replaceChildren(...people.map((p) => {
+      const dot = el('span', { class: 'dot', 'aria-hidden': 'true' });
+      dot.style.background = p.color;
+      const rtt = el('span', { class: 'rtt' }, p.rtt == null ? '…' : `${Math.round(p.rtt)} ms`);
+      return el('li', {}, dot, el('span', { class: 'who' }, p.name), el('span', { class: 'where' }, p.where), rtt);
+    }));
   }
 
   async _copyInvite() {
