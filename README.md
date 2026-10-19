@@ -2,15 +2,17 @@
 
 **https://ariamokr.github.io/hallway/**
 
-A WebXR corridor whose doors lead to other environments. The first one opens onto
-[vrlbry](https://ariamokr.github.io/vrlbry/), a candle-lit virtual library. Walk the hallway in VR
-on a Meta Quest, on a desktop or on a phone. There is nothing to install.
+A WebXR corridor whose doors lead to other environments:
+[vrlbry](https://ariamokr.github.io/vrlbry/), a candle-lit virtual library, and
+[Breadboard 8-bit](https://ariamokr.github.io/breadboard/vr.html), Ben Eater's 8-bit breadboard
+computer in 3D, run live by its simulator. Walk the hallway in VR on a Meta Quest, on a desktop or
+on a phone. There is nothing to install.
 
 Each open doorway shows the room behind it: the environment's picture, seen with parallax (and
-depth, in a headset), behind a glowing veil. Walk through it, click or tap it, or point at it in
-VR and pull the trigger, and the page goes there. When you come back, by the environment's own
-link or with Back, you start in front of the door you left by. Doors with no environment yet are
-drawn closed.
+depth, in a headset), behind a glowing veil. A door without a picture shows its name instead.
+Walk through it, click or tap it, or point at it in VR and pull the trigger, and the page goes
+there. When you come back, by the environment's own link or with Back, you start in front of the
+door you left by. Doors with no environment yet are drawn closed.
 
 ## Moving about
 
@@ -20,8 +22,8 @@ drawn closed.
 | Phone | drag | tap the floor | tap it |
 | Headset | your head | left stick walks (or aims a teleport), right stick turns, trigger at the floor teleports | trigger (or pinch) at it, or step through it |
 
-A control panel hangs on the right-hand wall near the entrance. Point at it (or click it) to enter
-or exit VR, and to choose how to move in VR:
+A control panel hangs on the right-hand wall, between the entrance and the first door. Point at
+it (or click it) to enter or exit VR, and to choose how to move in VR:
 
 - **Move: Smooth** (the default): the left stick walks the way you face.
 - **Move: Teleport**: push the left stick forward, aim that controller's ray at the floor, and let
@@ -41,16 +43,24 @@ npm test
 ```
 
 `public/` is the whole site: any static server can serve it once `npm install` has filled
-`public/vendor/`. WebXR needs a secure context. `http://localhost` counts as one. A Quest on the
-LAN can use `adb reverse tcp:8088 tcp:8088` and then open `http://localhost:8088/`.
+`public/vendor/`. WebXR needs a secure context. `http://localhost` counts as one.
+
+A Quest connected over adb can open the dev server as `http://localhost:8088/` after
+`adb reverse tcp:8088 tcp:8088`, as long as the server listens on IPv4. `npm start` listens on
+`localhost`, which can mean IPv6 only (`::1`, as on Windows), and the headset's connections then
+never arrive. For a headset, start it as:
+
+```bash
+npm start -- --host 127.0.0.1
+```
 
 `?xr=emulate` installs Meta's IWER emulator (a virtual Quest 3), so the VR mode can be tried
 without a headset.
 
 `node tools/quest-check.mjs` checks the hallway on a Quest connected over adb, which nobody needs
-to wear. It opens the published site, or the dev server with `--local`, enters VR, times the
-frames while walking the hall, presses the panel's settings and Exit VR, and writes a report to
-`perf/` (`--help` lists the options).
+to wear. It opens the published site, or the dev server with `--local` (started as above), enters
+VR, times the frames while walking the hall, presses the panel's settings and Exit VR, and writes
+a report to `perf/` (`--help` lists the options).
 
 ## Adding a door
 
@@ -64,14 +74,19 @@ Add an entry to [`public/js/environments.js`](public/js/environments.js), and a 
   subtitle: 'A walled garden at dusk',  // under it
   sign: 'Garden',                       // optional: the kind of place, over the door (else the title)
   url: 'https://example.org/garden/',
-  preview: 'https://example.org/garden/social.jpg', // optional; 2:1, readable cross-origin
+  preview: 'https://example.org/garden/social.jpg', // optional; 2:1, readable cross-origin; else the title shows
   color: '#7fc4a0',                     // the doorway's glow
 },
 ```
 
 Doors fill the hall from the entrance, left then right, and the hall gets longer as the list
-does. A preview is the room seen through the doorway. A screenshot taken at eye height, looking
-straight ahead, works best: its horizon is placed at eye level, a little above the middle.
+does. The `url` can be any page of a site, not only its front page: Breadboard 8-bit's door opens
+its VR view, `vr.html`. A preview is the room seen through the doorway. A screenshot taken at eye
+height, looking straight ahead, works best: its horizon is placed at eye level, a little above
+the middle.
+
+A new door changes what the doors across the hall look out on, so render the door views again
+(see "The view from your door") and commit them with it.
 
 The `url` may have a query of its own, but not the parameters below, which the hallway adds (a
 test checks).
@@ -143,14 +158,14 @@ navigator.xr?.addEventListener('sessiongranted', () => {
 ```
 
 Without that listener, the visitor arrives at the environment's 2D page and presses its Enter VR
-button.
+button. vrlbry listens; Breadboard 8-bit's VR view does not yet.
 
 The hand-over has two limits, measured on a Quest with Quest Browser 152 (vrlbry,
 [`7eca62b`](https://github.com/AriaMoKr/vrlbry/commit/7eca62b)):
 
 - **One origin only.** A navigation to another origin (another domain, or another port) gets no
-  grant, so the visitor arrives at the 2D page. The hallway and vrlbry are both on
-  `ariamokr.github.io`, so the hand-over works between them.
+  grant, so the visitor arrives at the 2D page. The hallway, vrlbry and Breadboard 8-bit are all on
+  `ariamokr.github.io`, so the hand-over can work between them.
 - **About 5 seconds.** The grant arrives about 0.1 s after the next page starts. A request made up
   to 4.7 s later starts the session, while one at 5.2 s is refused as needing a click. Ask for the
   session as soon as the page can draw a frame, not once everything else has loaded.
@@ -181,15 +196,18 @@ opposite wall, so the floor and ceiling in front of that wall are in it too: hun
 parallax. [vrlbry](https://github.com/AriaMoKr/vrlbry) shows its view through the door back in
 its library, and keeps a painted one for when this file cannot be read.
 
-The views change when the hall or its doors do. To render them again, run the dev server and, with
-a Quest connected over adb (or a desktop browser started with `--remote-debugging-port`, the dev
-server open in it, and `--cdp <its address>`):
+The views change when the hall or its doors do. To render them again with a Quest connected over
+adb, serve the site on IPv4 (see "Running it") and run the tool with the same port:
 
 ```bash
-node tools/door-views.mjs
+node tools/serve.mjs --host 127.0.0.1 --port 8089
+node tools/door-views.mjs --port 8089
 ```
 
-It writes `public/views/<id>.jpg` and `views.json`, to be committed with the change.
+The tool opens the hallway in Quest Browser and reloads it there before rendering, since a tab
+left open from an earlier run still shows the hall as it was then. With a desktop browser instead,
+start it with `--remote-debugging-port`, open the dev server in it, and pass `--cdp <its address>`.
+The tool writes `public/views/<id>.jpg` and `views.json`, to be committed with the change.
 
 ## Publishing
 

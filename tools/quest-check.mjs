@@ -22,7 +22,7 @@ const HELP = `Usage: node tools/quest-check.mjs [options]
 
 Options:
   --url <url>      the hallway to check (default ${SITE})
-  --local          check the dev server instead (npm start: http://localhost:${LOCAL_PORT}/, over adb reverse)
+  --local          check the dev server instead (npm start -- --host 127.0.0.1: http://localhost:${LOCAL_PORT}/, over adb reverse)
   --serial <id>    adb device serial, when several devices are connected
   --screenshot     also save the headset's view (both eyes) as a PNG
   --no-prox        leave the proximity sensor alone (the headset must then be worn to render)
