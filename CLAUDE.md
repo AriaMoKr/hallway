@@ -6,8 +6,9 @@ Guidance for Claude Code in this repository.
 
 A WebXR hallway (three.js 0.186, plain ES modules, no bundler or build step): a corridor whose
 doors lead to other web environments: vrlbry (https://ariamokr.github.io/vrlbry/, AriaMoKr/vrlbry,
-whose conventions this project follows) and Breadboard 8-bit's VR view
-(https://ariamokr.github.io/breadboard/vr.html). `public/` is the whole site. `README.md` covers
+whose conventions this project follows), Breadboard 8-bit's VR view
+(https://ariamokr.github.io/breadboard/vr.html) and vrlbry · music (https://ariamokr.github.io/music/,
+AriaMoKr/music: vrlbry with Gutenberg's Music class). `public/` is the whole site. `README.md` covers
 using it, adding a door, what a door's link tells the environment, how environments link back,
 and the door views the site publishes for them.
 

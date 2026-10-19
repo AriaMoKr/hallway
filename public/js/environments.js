@@ -33,4 +33,13 @@ export const ENVIRONMENTS = [
     // The red of its LEDs, softened.
     color: '#d8543f',
   },
+  {
+    id: 'music',
+    title: 'vrlbry · music',
+    subtitle: "vrlbry with Project Gutenberg's Music class on its shelves: scores, writing about music, lessons",
+    sign: 'Music Room',
+    url: 'https://ariamokr.github.io/music/',
+    // No preview yet: its social.jpg is still vrlbry's, so the doorway shows the title.
+    color: '#9b86d6',
+  },
 ];
