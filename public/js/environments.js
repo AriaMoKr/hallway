@@ -28,7 +28,9 @@ export const ENVIRONMENTS = [
     sign: 'Workshop',
     // Its VR view; the site's front page (…/breadboard/) is the simulator on a screen.
     url: 'https://ariamokr.github.io/breadboard/vr.html',
-    // No preview yet: the doorway shows the title. The red of its LEDs, softened.
+    // Rendered by breadboard's `npm run preview-image` for this doorway (hall.js's PICTURE).
+    preview: 'https://ariamokr.github.io/breadboard/hallway-preview.jpg',
+    // The red of its LEDs, softened.
     color: '#d8543f',
   },
 ];
