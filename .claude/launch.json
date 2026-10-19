@@ -6,6 +6,12 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["tools/serve.mjs", "--port", "8088"],
       "port": 8088
+    },
+    {
+      "name": "hallway-quest",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["tools/serve.mjs", "--host", "127.0.0.1", "--port", "8089"],
+      "port": 8089
     }
   ]
 }

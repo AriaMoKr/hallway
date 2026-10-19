@@ -22,11 +22,15 @@ export const HALL = {
 /** The window in the end wall. */
 export const WINDOW = { width: 1.6, bottom: 0.95, top: 2.85 };
 
+/** The plaque beside each open door, on its entrance side: its centre's distance from the door's, and its frame's width. */
+export const PLAQUE = { offset: HALL.doorWidth / 2 + 0.46, width: 0.6 };
+
 /**
- * The control panel on the right wall near the entrance: Enter / Exit VR and how to move in VR.
- * y and z are its centre; depth how far its face stands out from the wall.
+ * The control panel on the right wall near the entrance, between it and the first door's plaque:
+ * Enter / Exit VR and how to move in VR. y and z are its centre; depth how far its face stands
+ * out from the wall.
  */
-export const PANEL = { side: 1, z: -2.6, y: 1.36, width: 0.56, height: 0.4, depth: 0.03 };
+export const PANEL = { side: 1, z: -2.2, y: 1.36, width: 0.56, height: 0.4, depth: 0.03 };
 
 /** The panel's canvas, and its buttons on it as [id, x0, y0, x1, y1] in canvas pixels (y down). */
 export const PANEL_PX = { width: 512, height: 366 };

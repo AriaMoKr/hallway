@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { HALL, PANEL, PANEL_BUTTONS, PANEL_PX, layoutHall, clampToHall, doorCrossed, doorSpawn, castRay, panelButtonAt } from '../public/js/layout.js';
+import { HALL, PANEL, PANEL_BUTTONS, PANEL_PX, PLAQUE, layoutHall, clampToHall, doorCrossed, doorSpawn, castRay, panelButtonAt } from '../public/js/layout.js';
 
 const env = (id) => ({ id, title: id, url: `https://example.org/${id}/`, color: '#ffffff' });
 
@@ -100,4 +100,8 @@ test('castRay finds the control panel and the button pointed at', () => {
   assert.equal(panelButtonAt(0.02, 0.98), null, 'the title, no button');
   assert.equal(at(PANEL.y, PANEL.z + PANEL.width).kind, 'wall', 'beside the panel');
   assert.ok(L.doors.every((d) => d.side !== PANEL.side || Math.abs(d.z - PANEL.z) > HALL.doorWidth / 2 + 0.2 + PANEL.width / 2), 'clear of the doors');
+  // And of every plaque on its wall, open or not yet, with room for both frames between them.
+  for (const d of L.doors) {
+    if (d.side === PANEL.side) assert.ok(Math.abs(d.z + PLAQUE.offset - PANEL.z) > PLAQUE.width / 2 + PANEL.width / 2 + 0.25, `clear of door ${d.index}'s plaque`);
+  }
 });

@@ -1,7 +1,7 @@
 // Builds the hallway: floor, walls, ceiling and trim as a few merged meshes with baked lighting,
 // a portal in every open doorway, a closed door in the others, signs, lamps and the end window.
 import * as THREE from 'three';
-import { PANEL, WINDOW, layoutHall } from './layout.js';
+import { PANEL, PLAQUE, WINDOW, layoutHall } from './layout.js';
 import { Builder } from './builder.js';
 import { bake, boxOcclusion, lightAt } from './bake.js';
 import * as T from './textures.js';
@@ -142,8 +142,8 @@ export function buildHall(envs, { anisotropy = 1 } = {}) {
   for (const d of L.doors) {
     if (!d.env) continue;
     const s = d.side, wall = s * hw;
-    const pz = d.z + DW / 2 + 0.1 + 0.36;
-    box([wall, 1.33, pz - 0.3], [wall - s * 0.012, 1.67, pz + 0.3], DARK_WOOD);
+    const pz = d.z + PLAQUE.offset;
+    box([wall, 1.33, pz - PLAQUE.width / 2], [wall - s * 0.012, 1.67, pz + PLAQUE.width / 2], DARK_WOOD);
     sign(T.plaqueTexture(d.env), 0.56, 0.3, [wall - s * 0.014, 1.5, pz], -s * Math.PI / 2, [-s, 0, 0]).name = `plaque ${d.env.id}`;
     const blade = T.bladeTexture(d.env);
     const bx = wall - s * 0.4;

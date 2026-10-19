@@ -41,25 +41,41 @@ export function viewsJson(views) {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function evaluate(wsUrl, expression) {
+/** Sends one DevTools protocol command to a page and returns its reply. */
+async function send(wsUrl, method, params) {
   const ws = new WebSocket(wsUrl);
   await new Promise((resolve, reject) => {
     ws.addEventListener('open', resolve, { once: true });
     ws.addEventListener('error', () => reject(new Error(`cannot connect to ${wsUrl}`)), { once: true });
   });
   try {
-    const reply = await new Promise((resolve) => {
+    const reply = await new Promise((resolve, reject) => {
+      ws.addEventListener('close', () => reject(new Error(`${wsUrl} closed`)), { once: true });
       ws.addEventListener('message', ({ data }) => {
         const m = JSON.parse(data);
         if (m.id === 1) resolve(m);
       });
-      ws.send(JSON.stringify({ id: 1, method: 'Runtime.evaluate', params: { expression, awaitPromise: true, returnByValue: true } }));
+      ws.send(JSON.stringify({ id: 1, method, params }));
     });
-    const r = reply.result;
-    if (reply.error || r?.exceptionDetails) throw new Error(reply.error?.message || r.exceptionDetails.exception?.description || r.exceptionDetails.text);
-    return r.result.value;
+    if (reply.error) throw new Error(reply.error.message);
+    return reply.result;
   } finally {
     ws.close();
+  }
+}
+
+async function evaluate(wsUrl, expression) {
+  const r = await send(wsUrl, 'Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
+  if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text);
+  return r.result.value;
+}
+
+/** Waits until expression is true in the page, which may be loading meanwhile. */
+async function waitFor(ws, expression, ms) {
+  const until = Date.now() + ms;
+  while (!(await evaluate(ws, expression).catch(() => false))) {
+    if (Date.now() > until) throw new Error(`the page did not come back (${expression})`);
+    await sleep(500);
   }
 }
 
@@ -97,6 +113,11 @@ async function main() {
       endpoint = `http://127.0.0.1:${forward}`;
     }
     const ws = await findPage(endpoint, port, 60000);
+    // A tab left open from an earlier run still has the hall as it was then: load it afresh. The
+    // browser reloads it, since a tab hidden for a while hardly runs its own timers.
+    const loaded = await evaluate(ws, 'performance.timeOrigin');
+    await send(ws, 'Page.reload', { ignoreCache: true });
+    await waitFor(ws, `!!window.__hallway?.doorViews && performance.timeOrigin > ${loaded}`, 60000);
     const views = await evaluate(ws, '__hallway.doorViews()');
     fs.mkdirSync(opts.out, { recursive: true });
     for (const v of views) {

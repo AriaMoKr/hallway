@@ -41,4 +41,4 @@ node tools/door-views.mjs [--port n] [--cdp <url>]    # the view out of every op
 - Quest 3 is the performance target. Keep draw calls few (one mesh per material: merge static geometry into a `Builder`), allocate nothing per frame (reuse vectors and hit objects, index loops over `session.inputSources`), and keep lighting baked.
 - Coordinates: metres, floor y = 0, entrance wall z = 0, hall along -z, left is -x; yaw 0 faces -z.
 - Scripted testing: `window.__hallway` (renderer, scene, camera, rig, hall, layout, controls, fade, `go`, `enterVR`, `tick(dt, n)`, `xrDevice`). A hidden browser pane gets no animation frames, so drive it with `tick()`. `?xr=emulate` installs IWER; aim its controllers with `xrDevice.controllers.right.position/quaternion`, `updateButtonValue('trigger', 1)`, `updateAxes('thumbstick', x, y)`.
-- The embedded browser pane serves the dev server on port 8088 (`.claude/launch.json`).
+- The embedded browser pane serves the dev server on port 8088 (`.claude/launch.json`). `hallway-quest` serves it on `127.0.0.1:8089` as well, for the tools that reach it from a Quest through `adb reverse` (`--port 8089`).

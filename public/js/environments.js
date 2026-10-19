@@ -21,4 +21,14 @@ export const ENVIRONMENTS = [
     preview: 'https://ariamokr.github.io/vrlbry/social.jpg',
     color: '#d9b26a',
   },
+  {
+    id: 'breadboard',
+    title: 'Breadboard 8-bit',
+    subtitle: "Ben Eater's 8-bit breadboard computer on a table, run live by its simulator",
+    sign: 'Workshop',
+    // Its VR view; the site's front page (…/breadboard/) is the simulator on a screen.
+    url: 'https://ariamokr.github.io/breadboard/vr.html',
+    // No preview yet: the doorway shows the title. The red of its LEDs, softened.
+    color: '#d8543f',
+  },
 ];

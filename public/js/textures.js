@@ -345,8 +345,22 @@ export function previewFallback(env) {
   g.textAlign = 'center';
   g.textBaseline = 'middle';
   g.fillStyle = 'rgba(255,248,235,0.9)';
-  fit(g, env.title, W * 0.5, 110, '600');
-  g.fillText(env.title, W / 2, H * 0.5);
+  // The doorway shows only the middle of the picture, about a third of its width from across the
+  // hall, so the title fits there: on one line, or on two when that makes it larger.
+  const max = W * 0.28;
+  let lines = [env.title];
+  let size = fit(g, env.title, max, 110, '600');
+  const words = env.title.split(' ');
+  for (let i = 1; i < words.length; i++) {
+    const two = [words.slice(0, i).join(' '), words.slice(i).join(' ')];
+    const s = Math.min(fit(g, two[0], max, 110, '600'), fit(g, two[1], max, 110, '600'));
+    if (s > size * 1.15) {
+      lines = two;
+      size = s;
+    }
+  }
+  g.font = `600 ${size}px ${SERIF}`;
+  lines.forEach((line, i) => g.fillText(line, W / 2, H * 0.5 + (i - (lines.length - 1) / 2) * size * 1.1));
   return texture(c);
 }
 
