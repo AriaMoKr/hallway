@@ -6,7 +6,7 @@ import { companyText, peopleText, placeName, statusText } from '../public/js/pre
 test("a visitor's page in words: here, an environment's title, or elsewhere", () => {
   assert.equal(placeName('hallway', ENVIRONMENTS), 'here');
   for (const e of ENVIRONMENTS) assert.equal(placeName(e.id, ENVIRONMENTS), e.title, e.id);
-  assert.equal(placeName('outside', ENVIRONMENTS), 'Outside');
+  assert.equal(placeName('garden', [{ id: 'garden', title: 'The Garden' }]), 'The Garden');
   for (const page of ['page-a', 'page-b', '', null, undefined]) assert.equal(placeName(page, ENVIRONMENTS), 'elsewhere', String(page));
 });
 

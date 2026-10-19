@@ -2,8 +2,9 @@
 // alternate sides down the hall. Doors past the end of this list are drawn closed.
 //
 //   id        short, unique, URL-safe; an environment links back with ?from=<id> (README, "Linking back")
-//   title     its name, on the plaque beside the door and in the list of doors
-//   subtitle  one line under the title on the plaque
+//   title     its repository's name, on the plaque beside the door and in the list of doors
+//   subtitle  its page's description (<meta name="description">) word for word, under the title
+//             on the plaque (which shrinks the text until all of it fits)
 //   sign      optional: what kind of place it is, on the sign hanging over the door ("Library");
 //             without one the sign shows the title
 //   url       where the door leads (absolute, https)
@@ -14,7 +15,7 @@ export const ENVIRONMENTS = [
   {
     id: 'vrlbry',
     title: 'vrlbry',
-    subtitle: 'A candle-lit virtual library: Project Gutenberg, Wikipedia and Wikisource on its shelves',
+    subtitle: 'A virtual library: browse and read the books in your ZIM files on bookshelves, in VR or in the browser.',
     sign: 'Library',
     // Opens vrlbry at its place for Kiwix's ZIM of all English Project Gutenberg books (2025-11).
     url: 'https://ariamokr.github.io/vrlbry/?place=%7Egutenberg_en_all_2025-11',
@@ -23,8 +24,9 @@ export const ENVIRONMENTS = [
   },
   {
     id: 'breadboard',
-    title: 'Breadboard 8-bit',
-    subtitle: "Ben Eater's 8-bit breadboard computer on a table, run live by its simulator",
+    title: 'breadboard',
+    // vr.html's description.
+    subtitle: "Ben Eater's 8-bit breadboard computer in VR: the boards on a table, run live by the simulator, and your own breadboard circuits from the sandbox.",
     sign: 'Workshop',
     // Its VR view; the site's front page (…/breadboard/) is the simulator on a screen.
     url: 'https://ariamokr.github.io/breadboard/vr.html',
@@ -35,18 +37,20 @@ export const ENVIRONMENTS = [
   },
   {
     id: 'music',
-    title: 'vrlbry · music',
-    subtitle: "vrlbry with Project Gutenberg's Music class on its shelves: scores, writing about music, lessons",
+    title: 'music',
+    // Its page's description is still vrlbry's (the repository began as a copy): until it has its own.
+    subtitle: 'A virtual library: browse and read the books in your ZIM files on bookshelves, in VR or in the browser.',
     sign: 'Music Room',
     url: 'https://ariamokr.github.io/music/',
     // No preview yet: its social.jpg is still vrlbry's, so the doorway shows the title.
     color: '#9b86d6',
   },
   {
-    // The same as HALLWAY_DOOR in AriaMoKr/outside's public/js/way.js.
+    // HALLWAY_DOOR in AriaMoKr/outside's public/js/way.js was the same, before the title and
+    // subtitle became the repository's name and the page's description.
     id: 'outside',
-    title: 'Outside',
-    subtitle: 'A small garden: a lawn, a stream and a pond, a foot bridge, and a bench to read on',
+    title: 'outside',
+    subtitle: "A small garden outside one of the hallway's doors: a lawn, a stream and a pond, a foot bridge, and a bench to sit and read on. Walk it in VR on a Meta Quest, on a desktop or on a phone.",
     sign: 'Garden',
     url: 'https://ariamokr.github.io/outside/',
     preview: 'https://ariamokr.github.io/outside/hallway-preview.jpg',

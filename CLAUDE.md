@@ -30,7 +30,7 @@ node tools/door-views.mjs [--port n] [--cdp <url>]    # the view out of every op
 
 ## Layout
 
-- `public/js/environments.js`: the doors' data. Keep the `<noscript>` list in `index.html` in step (tested).
+- `public/js/environments.js`: the doors' data. A door's `title` is its repository's name and its `subtitle` its page's `<meta name="description">` word for word (music's is still vrlbry's until its page has its own); `textures.js`'s `plaqueTexture` fits all of it, the largest size from 26 px down, on even lines. Keep the `<noscript>` list in `index.html` in step (tested).
 - `layout.js`: pure (no three, tested in Node). Hall dimensions (`HALL`), door slots, the plaque beside each open door (`PLAQUE`), `clampToHall` (walking), `doorCrossed` (the threshold that navigates), `castRay` (what a pointer hits: the hall is a box, so picking is plane math, no Raycaster over meshes), `entranceSpawn` and `doorSpawn` (where arrivals stand, spread by a key, a member id's `hash`, so a visitor always gets the same spot; tested inside the hall and apart).
 - `arrival.js`: pure. Which door a visitor came back out of: `?from=<id>`, then Back (`back_forward` + the door in sessionStorage), then the referrer.
 - `link.js`: pure. The link a door opens (`doorLink`): the environment's URL plus `from`, `back`, `dw`, `dh`, `glow`, in a shared session `room` (on `back` too) and, going through in 3D, the pose in the doorway (`doorPose`: `dx`, `yaw`, `pitch`). The parameters are documented in README's Going in section; keep it in step.

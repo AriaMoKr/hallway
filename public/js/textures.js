@@ -292,14 +292,28 @@ export function plaqueTexture(env) {
   g.textAlign = 'center';
   g.textBaseline = 'alphabetic';
   g.fillStyle = GOLD;
-  fit(g, env.title, W - 90, 84, '600');
-  g.fillText(env.title, W / 2, 118);
+  fit(g, env.title, W - 90, 72, '600');
+  g.fillText(env.title, W / 2, 96);
   g.fillStyle = 'rgba(224,187,114,0.6)';
-  g.fillRect(W / 2 - 60, 140, 120, 2);
+  g.fillRect(W / 2 - 60, 114, 120, 2);
+  // The description, all of it (it is the page's own, word for word): the largest size, 26 px
+  // down, at which its lines fit below the rule, centred there.
   g.fillStyle = '#efe5cf';
-  g.font = `26px ${SANS}`;
-  const lines = wrap(g, env.subtitle || '', W - 90, 3);
-  lines.forEach((l, i) => g.fillText(l, W / 2, 182 + i * 32 - (lines.length - 1) * 8));
+  const text = env.subtitle || '';
+  const top = 124, bottom = H - 32, width = W - 80;
+  let size = 26, lines = [];
+  for (; size >= 13; size--) {
+    g.font = `${size}px ${SANS}`;
+    lines = wrap(g, text, width, Infinity);
+    if (lines.length * size * 1.22 <= bottom - top) break;
+  }
+  // Even the lines out (no word left alone on the last): the narrowest width that takes no more.
+  let even = width;
+  while (even > width * 0.6 && wrap(g, text, even - 6, Infinity).length === lines.length) even -= 6;
+  lines = wrap(g, text, even, Infinity);
+  const lead = size * 1.22;
+  const first = top + (bottom - top - lines.length * lead) / 2 + size * 0.9;
+  lines.forEach((l, i) => g.fillText(l, W / 2, first + i * lead));
   return texture(c);
 }
 

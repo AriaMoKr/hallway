@@ -127,8 +127,8 @@ Add an entry to [`public/js/environments.js`](public/js/environments.js), and a 
 ```js
 {
   id: 'garden',                         // short, unique; used in ?from=garden
-  title: 'Garden',                      // on the plaque beside the door
-  subtitle: 'A walled garden at dusk',  // under it
+  title: 'garden',                      // its repository's name, on the plaque beside the door
+  subtitle: 'A walled garden at dusk.', // its page's <meta name="description">, word for word, under it
   sign: 'Garden',                       // optional: the kind of place, over the door (else the title)
   url: 'https://example.org/garden/',
   preview: 'https://example.org/garden/social.jpg', // optional; 2:1, readable cross-origin; else the title shows
@@ -137,10 +137,11 @@ Add an entry to [`public/js/environments.js`](public/js/environments.js), and a 
 ```
 
 Doors fill the hall from the entrance, left then right, and the hall gets longer as the list
-does. The `url` can be any page of a site, not only its front page: Breadboard 8-bit's door opens
-its VR view, `vr.html`. A preview is the room seen through the doorway. A screenshot taken at eye
-height, looking straight ahead, works best: its horizon is placed at eye level, a little above
-the middle.
+does. The plaque shrinks a long description until all of it fits, so it is the page's own, not a
+shortened one; when the page's description changes, change the subtitle with it. The `url` can
+be any page of a site, not only its front page: breadboard's door opens its VR view, `vr.html`.
+A preview is the room seen through the doorway. A screenshot taken at eye height, looking
+straight ahead, works best: its horizon is placed at eye level, a little above the middle.
 
 A new door changes what the doors across the hall look out on, so render the door views again
 (see "The view from your door") and commit them with it.
