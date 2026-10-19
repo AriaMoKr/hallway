@@ -21,6 +21,14 @@ door you left by. Doors with no environment yet are drawn closed.
 | Desktop | drag | WASD or arrows (Shift runs), Q/E or ←/→ turn, click the floor | click it, or walk into it |
 | Phone | drag | tap the floor | tap it |
 | Headset | your head | left stick walks (or aims a teleport), right stick turns, trigger at the floor teleports | trigger (or pinch) at it, or step through it |
+| Gamepad, in fullscreen | right stick | left stick (click it in to run) | A with the dot on it, or walk into it |
+
+**Fullscreen**, at the bottom right beside Enter VR, fills the screen with the hallway. To leave
+it, press **✕ Exit fullscreen** in the same place, Esc, or View on a gamepad (the button also
+called Back, Select, Share or −). In fullscreen a gamepad plays like a first-person game: the left
+stick walks, the right one looks, and a dot in the middle of the view shows what A uses (a door,
+a button on the control panel, or a spot on the floor to walk to). Out of fullscreen the gamepad
+does nothing. A browser that cannot go fullscreen, such as an iPhone's, shows no button.
 
 A control panel hangs on the right-hand wall, between the entrance and the first door. Point at
 it (or click it) to enter or exit VR, and to choose how to move in VR:

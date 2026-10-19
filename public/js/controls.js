@@ -1,6 +1,8 @@
 // Moving about the hall and choosing doors, on every device:
 //   desktop: drag to look, WASD / arrows to walk (Shift runs), click a door or the floor
 //   phone:   drag to look, tap a door or the floor
+//   gamepad: in fullscreen (main.js turns it on), the left stick walks, the right one looks, A
+//            uses what the middle of the view is on (gamepad.js)
 //   headset: point and pull the trigger (or pinch) at a door, the floor or the control panel; the
 //            left stick walks (move 'smooth') or aims a teleport (move 'teleport'), the right one
 //            turns in steps (turn 'snap') or smoothly (turn 'smooth'); or walk through a doorway
@@ -8,6 +10,7 @@
 // pose in VR). Per frame nothing is allocated.
 import * as THREE from 'three';
 import { castRay, clampToHall, panelButtonAt } from './layout.js';
+import { readPad } from './gamepad.js';
 
 const LOOK = 0.0045; // radians per pixel dragged
 const WALK = 1.9, RUN = 3.8, XR_WALK = 1.8; // metres per second
@@ -15,6 +18,7 @@ const TURN = 1.9; // radians per second (arrow keys)
 const SNAP = Math.PI / 6;
 const SMOOTH_TURN = 1.6; // radians per second at full stick
 const PITCH = 1.35;
+const PAD_TURN = 2.6, PAD_PITCH = 1.7; // radians per second, a gamepad's right stick at full tilt
 const EYE = 1.6;
 
 const KEYS = {
@@ -53,6 +57,19 @@ export class Controls {
     this.onTeleport = (move) => move();
     /** The first time the viewer does anything (hides the hint). */
     this.onActivity = () => {};
+    /** Whether a gamepad moves the viewer (main.js: in fullscreen). */
+    this.padEnabled = false;
+    /** The gamepad was used last: the middle of the view is what it points at (main.js shows a dot there). */
+    this.padActive = false;
+    /** When a gamepad is first seen, and when its View button is pressed (main.js leaves fullscreen). */
+    this.onPadConnected = () => {};
+    this.onPadExit = () => {};
+    this._pad = readPad({ axes: [], buttons: [] });
+    this._padUse = false;
+    this._padExit = false;
+    this._pads = 0;
+    /** Whether a gamepad is connected. */
+    this.hasPad = false;
     this.auto = null; // a walk under way: { points: [[x, z], …], i, face: door|null, speed }
     this._down = null;
     this._mouse = null;
@@ -123,6 +140,7 @@ export class Controls {
     }
     if (this.auto) this._updateWalk(dt);
     else this._updateKeys(dt);
+    if (this.padEnabled && this._pads) this._updatePad(dt);
     this._apply();
     this._updateHover();
   }
@@ -153,6 +171,47 @@ export class Controls {
     this._move(p.x + (-sin * f + cos * s) * step, p.z + (-cos * f - sin * s) * step);
   }
 
+  /** The first connected gamepad: walking and looking like a first-person game, A to use. */
+  _updatePad(dt) {
+    const pads = navigator.getGamepads?.();
+    let pad = null;
+    for (let i = 0; pads && i < pads.length && !pad; i++) if (pads[i]?.connected) pad = pads[i];
+    if (!pad) return;
+    const s = readPad(pad, this._pad);
+    const moving = s.moveX !== 0 || s.moveY !== 0, looking = s.lookX !== 0 || s.lookY !== 0;
+    if (moving || looking || s.use || s.exit) {
+      this.padActive = true;
+      this.onActivity();
+    }
+    if (moving || looking) this.auto = null;
+    if (looking) {
+      this.yaw -= s.lookX * PAD_TURN * dt;
+      this.pitch = clamp(this.pitch - s.lookY * PAD_PITCH * dt, -PITCH, PITCH);
+    }
+    if (moving) {
+      const step = (s.run ? RUN : WALK) * dt;
+      const sin = Math.sin(this.yaw), cos = Math.cos(this.yaw);
+      const f = -s.moveY, r = s.moveX;
+      const p = this.rig.position;
+      this._move(p.x + (-sin * f + cos * r) * step, p.z + (-cos * f - sin * r) * step);
+    }
+    // Buttons act once per press.
+    if (s.use && !this._padUse) this._useMiddle();
+    if (s.exit && !this._padExit) this.onPadExit();
+    this._padUse = s.use;
+    this._padExit = s.exit;
+  }
+
+  /** A on a gamepad: what the middle of the view is on, as a click there would. */
+  _useMiddle() {
+    this.camera.updateWorldMatrix(true, false);
+    const hit = this._pickNdc(0, 0);
+    if (!hit) return;
+    if (hit.kind === 'door') this.onSelect(hit.door, 'screen');
+    else if (hit.kind === 'panel') this._press(panelButtonAt(hit.u, hit.v));
+    else if (hit.kind === 'floor') this.walkTo(hit.x, hit.z);
+  }
+
   _updateWalk(dt) {
     const a = this.auto;
     const p = this.rig.position;
@@ -178,8 +237,13 @@ export class Controls {
 
   _pickScreen(clientX, clientY) {
     const r = this.dom.getBoundingClientRect();
-    this._ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
     this.camera.updateWorldMatrix(true, false);
+    return this._pickNdc(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
+  }
+
+  /** What is at (x, y) in the view, -1…1 from its bottom left. */
+  _pickNdc(x, y) {
+    this._ndc.set(x, y);
     this._raycaster.setFromCamera(this._ndc, this.camera);
     const { origin: o, direction: d } = this._raycaster.ray;
     return castRay(this.layout, o.x, o.y, o.z, d.x, d.y, d.z, this._hit);
@@ -187,8 +251,10 @@ export class Controls {
 
   _updateHover() {
     let door = null, button = null;
-    if (this._mouse && !this._down) {
-      const hit = this._pickScreen(this._mouse.x, this._mouse.y);
+    const aim = this.padEnabled && this.padActive;
+    if (aim || (this._mouse && !this._down)) {
+      if (aim) this.camera.updateWorldMatrix(true, false);
+      const hit = aim ? this._pickNdc(0, 0) : this._pickScreen(this._mouse.x, this._mouse.y);
       if (hit?.kind === 'door') door = hit.door;
       else if (hit?.kind === 'panel') button = panelButtonAt(hit.u, hit.v);
     }
@@ -216,6 +282,7 @@ export class Controls {
     });
     el.addEventListener('pointermove', (e) => {
       if (e.pointerType === 'mouse') this._mouse = { x: e.clientX, y: e.clientY };
+      this.padActive = false;
       const d = this._down;
       if (!d || d.id !== e.pointerId) return;
       const dx = e.clientX - d.lx, dy = e.clientY - d.ly;
@@ -255,6 +322,16 @@ export class Controls {
       if (k) this.keys.delete(k);
     });
     window.addEventListener('blur', () => this.keys.clear());
+    window.addEventListener('gamepadconnected', (e) => {
+      this._pads++;
+      this.hasPad = true;
+      this.onPadConnected(e.gamepad);
+    });
+    window.addEventListener('gamepaddisconnected', () => {
+      this._pads = Math.max(0, this._pads - 1);
+      this.hasPad = this._pads > 0;
+      if (!this.hasPad) this.padActive = false;
+    });
   }
 
   // ── VR ──────────────────────────────────────────────────────────────────────

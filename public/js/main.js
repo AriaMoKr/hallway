@@ -154,7 +154,40 @@ controls.onActivity = () => {
   active = true;
   overlay.hideHint();
 };
-overlay.setHint(matchMedia('(pointer: coarse)').matches);
+overlay.setHint(matchMedia('(pointer: coarse)').matches ? 'touch' : 'mouse');
+
+// ── Fullscreen, and a gamepad in it ──────────────────────────────────────────
+
+const root = document.documentElement;
+const fullscreenElement = () => document.fullscreenElement || document.webkitFullscreenElement || null;
+function toggleFullscreen() {
+  const request = fullscreenElement()
+    ? (document.exitFullscreen || document.webkitExitFullscreen).call(document)
+    : (root.requestFullscreen || root.webkitRequestFullscreen).call(root);
+  Promise.resolve(request).catch((err) => overlay.toast(`Could not change fullscreen: ${err.message}`, 5));
+}
+function onFullscreenChange() {
+  const on = !!fullscreenElement();
+  overlay.setFullscreen(on);
+  controls.padEnabled = on;
+  controls.padActive = false;
+  if (!on) return;
+  overlay.toast(controls.hasPad ? 'Esc or View leaves fullscreen' : 'Esc leaves fullscreen', 4);
+  if (controls.hasPad) overlay.setHint('gamepad');
+}
+// Browsers that cannot (an iPhone's) do not get the button.
+if (document.fullscreenEnabled || document.webkitFullscreenEnabled) {
+  overlay.showFullscreen(toggleFullscreen);
+  document.addEventListener('fullscreenchange', onFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+}
+controls.onPadConnected = () => {
+  if (controls.padEnabled) overlay.setHint('gamepad');
+  else if (!overlay.fullscreen.hidden) overlay.toast('Gamepad found: Fullscreen to walk with it', 5);
+};
+controls.onPadExit = () => {
+  if (fullscreenElement()) toggleFullscreen();
+};
 
 // ── VR ───────────────────────────────────────────────────────────────────────
 
@@ -242,6 +275,7 @@ function step(dt) {
   hall.update(time, dt, head, controls.hoverDoor);
   hall.panel.setHover(controls.hoverPanel);
   overlay.setHover(controls.hoverDoor?.env ?? null);
+  overlay.setAim(controls.padEnabled && controls.padActive && !renderer.xr.isPresenting);
   if (!leaving) {
     const door = doorCrossed(L, head.x, head.z);
     if (door) go(door);

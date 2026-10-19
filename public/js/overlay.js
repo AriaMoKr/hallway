@@ -1,6 +1,6 @@
 // The page around the 3D view (not shown in a headset): the hallway's name and its doors as plain
 // links (for keyboards, screen readers and browsers without WebGL), a hint on how to move, the
-// Enter VR button and short messages.
+// Fullscreen and Enter VR buttons, the dot a gamepad aims with, and short messages.
 
 const COLLAPSED = 'hallway.doorsCollapsed';
 
@@ -53,9 +53,12 @@ export class Overlay {
     this.toggle.addEventListener('click', () => this._collapse(!this.card.classList.contains('collapsed')));
     this._collapse(stored(COLLAPSED) === '1', false);
     this.hint = el('p', { class: 'hint' });
-    this.vr = el('button', { class: 'vr', type: 'button', hidden: '' }, 'Enter VR');
+    this.fullscreen = el('button', { class: 'pill', type: 'button', hidden: '' }, 'Fullscreen');
+    this.vr = el('button', { class: 'pill vr', type: 'button', hidden: '' }, 'Enter VR');
+    this.buttons = el('div', { class: 'buttons' }, this.fullscreen, this.vr);
+    this.dot = el('div', { class: 'aim', hidden: '', 'aria-hidden': 'true' });
     this.toasts = el('div', { class: 'toasts', role: 'status', 'aria-live': 'polite' });
-    this.root.append(this.card, this.hint, this.vr, this.toasts);
+    this.root.append(this.card, this.hint, this.buttons, this.dot, this.toasts);
     this._hover = null;
   }
 
@@ -65,10 +68,14 @@ export class Overlay {
     if (save) store(COLLAPSED, collapsed ? '1' : null);
   }
 
-  setHint(touch) {
-    this.hint.textContent = touch
-      ? 'Drag to look · tap the floor to walk · tap a glowing door to go in'
-      : 'Drag to look around · WASD or arrows to walk · click a glowing door to go through';
+  /** @param {'mouse'|'touch'|'gamepad'} how */
+  setHint(how) {
+    this.hint.classList.remove('gone');
+    this.hint.textContent = {
+      touch: 'Drag to look · tap the floor to walk · tap a glowing door to go in',
+      mouse: 'Drag to look around · WASD or arrows to walk · click a glowing door to go through',
+      gamepad: 'Left stick walks · right stick looks · A goes through the door in the middle · View leaves fullscreen',
+    }[how];
     clearTimeout(this._hintTimer);
     this._hintTimer = setTimeout(() => this.hideHint(), 12000);
   }
@@ -80,6 +87,22 @@ export class Overlay {
   showVR(onClick) {
     this.vr.hidden = false;
     this.vr.addEventListener('click', onClick);
+  }
+
+  showFullscreen(onClick) {
+    this.fullscreen.hidden = false;
+    this.fullscreen.addEventListener('click', onClick);
+  }
+
+  setFullscreen(on) {
+    this.fullscreen.textContent = on ? '✕ Exit fullscreen' : 'Fullscreen';
+    this.fullscreen.classList.toggle('on', on);
+  }
+
+  /** The dot in the middle of the view that a gamepad aims with. */
+  setAim(on) {
+    if (this.dot.hidden === !on) return;
+    this.dot.hidden = !on;
   }
 
   /** Marks the door pointed at in 3D in the list too. */
