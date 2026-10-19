@@ -42,4 +42,14 @@ export const ENVIRONMENTS = [
     // No preview yet: its social.jpg is still vrlbry's, so the doorway shows the title.
     color: '#9b86d6',
   },
+  {
+    // The same as HALLWAY_DOOR in AriaMoKr/outside's public/js/way.js.
+    id: 'outside',
+    title: 'Outside',
+    subtitle: 'A small garden: a lawn, a stream and a pond, a foot bridge, and a bench to read on',
+    sign: 'Garden',
+    url: 'https://ariamokr.github.io/outside/',
+    preview: 'https://ariamokr.github.io/outside/hallway-preview.jpg',
+    color: '#9fd07a',
+  },
 ];

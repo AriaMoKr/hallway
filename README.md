@@ -5,9 +5,11 @@
 A WebXR corridor whose doors lead to other environments:
 [vrlbry](https://ariamokr.github.io/vrlbry/), a candle-lit virtual library;
 [Breadboard 8-bit](https://ariamokr.github.io/breadboard/vr.html), Ben Eater's 8-bit breadboard
-computer in 3D, run live by its simulator; and [vrlbry · music](https://ariamokr.github.io/music/),
-vrlbry with Project Gutenberg's music books on its shelves. Walk the hallway in VR on a Meta
-Quest, on a desktop or on a phone. There is nothing to install.
+computer in 3D, run live by its simulator; [vrlbry · music](https://ariamokr.github.io/music/),
+vrlbry with Project Gutenberg's music books on its shelves; and
+[Outside](https://ariamokr.github.io/outside/), a small garden with a stream, a pond and a bench to
+read on. Walk the hallway in VR on a Meta Quest, on a desktop or on a phone. There is nothing to
+install.
 
 Each open doorway shows the room behind it: the environment's picture, seen with parallax (and
 depth, in a headset), behind a glowing veil. A door without a picture shows its name instead.
@@ -200,13 +202,13 @@ navigator.xr?.addEventListener('sessiongranted', () => {
 ```
 
 Without that listener, the visitor arrives at the environment's 2D page and presses its Enter VR
-button. vrlbry, Breadboard 8-bit's VR view and vrlbry · music all listen.
+button. vrlbry, Breadboard 8-bit's VR view, vrlbry · music and Outside all listen.
 
 The hand-over has two limits, measured on a Quest with Quest Browser 152 (vrlbry,
 [`7eca62b`](https://github.com/AriaMoKr/vrlbry/commit/7eca62b)):
 
 - **One origin only.** A navigation to another origin (another domain, or another port) gets no
-  grant, so the visitor arrives at the 2D page. The hallway and all three environments are on
+  grant, so the visitor arrives at the 2D page. The hallway and all four environments are on
   `ariamokr.github.io`, so the hand-over can work between them.
 - **About 5 seconds.** The grant arrives about 0.1 s after the next page starts. A request made up
   to 4.7 s later starts the session, while one at 5.2 s is refused as needing a click. Ask for the
