@@ -74,7 +74,7 @@ export class Overlay {
     this.hint.textContent = {
       touch: 'Drag to look · tap the floor to walk · tap a glowing door to go in',
       mouse: 'Drag to look around · WASD or arrows to walk · click a glowing door to go through',
-      gamepad: 'Left stick walks · right stick looks · A goes through the door in the middle · View leaves fullscreen',
+      gamepad: 'Right stick to look · left stick to walk · A goes through a door',
     }[how];
     clearTimeout(this._hintTimer);
     this._hintTimer = setTimeout(() => this.hideHint(), 12000);
@@ -99,10 +99,10 @@ export class Overlay {
     this.fullscreen.classList.toggle('on', on);
   }
 
-  /** The dot in the middle of the view that a gamepad aims with. */
-  setAim(on) {
-    if (this.dot.hidden === !on) return;
-    this.dot.hidden = !on;
+  /** The dot in the middle of the view that a gamepad aims with; larger and filled on something A would use. */
+  setAim(on, hover = false) {
+    if (this.dot.hidden !== !on) this.dot.hidden = !on;
+    if (this.dot.classList.contains('hover') !== hover) this.dot.classList.toggle('hover', hover);
   }
 
   /** Marks the door pointed at in 3D in the list too. */

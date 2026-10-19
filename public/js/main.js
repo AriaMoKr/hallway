@@ -156,7 +156,7 @@ controls.onActivity = () => {
 };
 overlay.setHint(matchMedia('(pointer: coarse)').matches ? 'touch' : 'mouse');
 
-// ── Fullscreen, and a gamepad in it ──────────────────────────────────────────
+// ── Fullscreen, and the gamepad ──────────────────────────────────────────────
 
 const root = document.documentElement;
 const fullscreenElement = () => document.fullscreenElement || document.webkitFullscreenElement || null;
@@ -169,11 +169,7 @@ function toggleFullscreen() {
 function onFullscreenChange() {
   const on = !!fullscreenElement();
   overlay.setFullscreen(on);
-  controls.padEnabled = on;
-  controls.padActive = false;
-  if (!on) return;
-  overlay.toast(controls.hasPad ? 'Esc or View leaves fullscreen' : 'Esc leaves fullscreen', 4);
-  if (controls.hasPad) overlay.setHint('gamepad');
+  if (on) overlay.toast(controls.hasPad ? 'Esc or B leaves fullscreen' : 'Esc leaves fullscreen', 4);
 }
 // Browsers that cannot (an iPhone's) do not get the button.
 if (document.fullscreenEnabled || document.webkitFullscreenEnabled) {
@@ -181,11 +177,12 @@ if (document.fullscreenEnabled || document.webkitFullscreenEnabled) {
   document.addEventListener('fullscreenchange', onFullscreenChange);
   document.addEventListener('webkitfullscreenchange', onFullscreenChange);
 }
-controls.onPadConnected = () => {
-  if (controls.padEnabled) overlay.setHint('gamepad');
-  else if (!overlay.fullscreen.hidden) overlay.toast('Gamepad found: Fullscreen to walk with it', 5);
+// As in vrlbry: the gamepad takes over when used (its hint, and a dot in the middle of the view to
+// aim with), and the mouse takes it back. B or Back leaves fullscreen.
+controls.onPadActive = (on) => {
+  if (on) overlay.setHint('gamepad');
 };
-controls.onPadExit = () => {
+controls.onPadBack = () => {
   if (fullscreenElement()) toggleFullscreen();
 };
 
@@ -275,7 +272,7 @@ function step(dt) {
   hall.update(time, dt, head, controls.hoverDoor);
   hall.panel.setHover(controls.hoverPanel);
   overlay.setHover(controls.hoverDoor?.env ?? null);
-  overlay.setAim(controls.padEnabled && controls.padActive && !renderer.xr.isPresenting);
+  overlay.setAim(controls.padActive && !renderer.xr.isPresenting, !!(controls.hoverDoor?.env || controls.hoverPanel));
   if (!leaving) {
     const door = doorCrossed(L, head.x, head.z);
     if (door) go(door);
