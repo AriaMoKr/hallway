@@ -5,11 +5,13 @@
 A WebXR corridor whose doors lead to other environments:
 [vrlbry](https://ariamokr.github.io/vrlbry/), a candle-lit virtual library;
 [Breadboard 8-bit](https://ariamokr.github.io/breadboard/vr.html), Ben Eater's 8-bit breadboard
-computer in 3D, run live by its simulator; [vrlbry · music](https://ariamokr.github.io/music/),
-vrlbry with Project Gutenberg's music books on its shelves; and
+computer in 3D, run live by its simulator; [music](https://ariamokr.github.io/music/), a music
+room where Project Gutenberg's books on music play their scores; and
 [Outside](https://ariamokr.github.io/outside/), a small garden with a stream, a pond and a bench to
 read on. Walk the hallway in VR on a Meta Quest, on a desktop or on a phone. There is nothing to
 install.
+
+![The hallway: a library's bookcases through an open door under a Library sign, and more doors and signs down a chequered floor to a window at dusk](public/social.jpg)
 
 Each open doorway shows the room behind it: the environment's picture, seen with parallax (and
 depth, in a headset), behind a glowing veil. A door without a picture shows its name instead.
@@ -98,6 +100,8 @@ npm install     # three.js, the shared-session layer and Trystero (and IWER, for
 npm start       # http://localhost:8088/
 npm test
 ```
+
+It needs Node 22 or later: the tools that drive a Quest use its built-in WebSocket.
 
 `public/` is the whole site: any static server can serve it once `npm install` has filled
 `public/vendor/`. WebXR needs a secure context. `http://localhost` counts as one.
@@ -222,7 +226,7 @@ navigator.xr?.addEventListener('sessiongranted', () => {
 ```
 
 Without that listener, the visitor arrives at the environment's 2D page and presses its Enter VR
-button. vrlbry, Breadboard 8-bit's VR view, vrlbry · music and Outside all listen.
+button. vrlbry, Breadboard 8-bit's VR view, music and Outside all listen.
 
 The hand-over has two limits, measured on a Quest with Quest Browser 152 (vrlbry,
 [`7eca62b`](https://github.com/AriaMoKr/vrlbry/commit/7eca62b)):
@@ -271,7 +275,8 @@ node tools/door-views.mjs --port 8089
 The tool opens the hallway in Quest Browser and reloads it there before rendering, since a tab
 left open from an earlier run still shows the hall as it was then. With a desktop browser instead,
 start it with `--remote-debugging-port`, open the dev server in it, and pass `--cdp <its address>`.
-The tool writes `public/views/<id>.jpg` and `views.json`, to be committed with the change.
+The tool writes `public/views/<id>.jpg` and `views.json`, to be committed with the change. It also
+renders the picture a shared link to the hallway shows (see "Publishing"), `public/social.jpg`.
 
 ## Publishing
 
@@ -280,3 +285,11 @@ The tool writes `public/views/<id>.jpg` and `views.json`, to be committed with t
 on every push to `main`. In the repository's Settings → Pages, the source must be "GitHub
 Actions". Every URL in the page is relative, so the hallway would also work at another path or at
 the account's own root.
+
+A link to the hallway shared in a chat or a post shows a picture and a summary: the `og:` and
+`twitter:` tags in `public/index.html`, whose `og:url` and `og:image` are the published address
+(absolute, as those tags must be). The picture, `public/social.jpg` (1280 × 640), is the hall from
+near the entrance, looking a little into the first door; `tools/door-views.mjs` renders it with
+the door views (`HALL_VIEW` in `public/js/door-view.js` is where it is taken from), so render them
+again when the hall or its doors change. It is also this repository's social preview on GitHub
+(Settings → Social preview), uploaded by hand.

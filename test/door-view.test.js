@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ENVIRONMENTS } from '../public/js/environments.js';
 import { layoutHall } from '../public/js/layout.js';
-import { VIEW, doorView } from '../public/js/door-view.js';
+import { HALL_VIEW, VIEW, doorView } from '../public/js/door-view.js';
 import { viewsJson } from '../tools/door-views.mjs';
 
 const L = layoutHall(ENVIRONMENTS);
@@ -30,6 +30,13 @@ test('its picture, hung at the opposite wall, matches its frustum', () => {
   assert.equal(eye, VIEW.eye);
   // The floor across the hall is in it: the far wall's foot is above its bottom.
   assert.ok(eye - horizon * pictureHeight < -2);
+});
+
+test("the link preview's picture is 2:1, from where a visitor could stand short of the first doors", () => {
+  assert.equal(HALL_VIEW.width, 2 * HALL_VIEW.height);
+  assert.ok(Math.abs(HALL_VIEW.x) < L.halfWidth - L.hall.margin, 'inside the walls');
+  assert.ok(HALL_VIEW.z < 0 && HALL_VIEW.z > L.doors[0].z + L.hall.doorWidth / 2, 'between the entrance and the first doors');
+  assert.ok(HALL_VIEW.y > 1 && HALL_VIEW.y < 2, 'at eye height');
 });
 
 test('views.json names each picture with its parameters', () => {

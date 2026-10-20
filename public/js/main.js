@@ -14,7 +14,7 @@ import { arrivalDoorId } from './arrival.js';
 import { doorLink, doorPose } from './link.js';
 import { setAnisotropy } from './textures.js';
 import { loadNav, saveNav } from './settings.js';
-import { doorView, renderDoorView } from './door-view.js';
+import { doorView, renderDoorView, renderHallView } from './door-view.js';
 import { Together } from './together.js';
 import { hash, loadIdentity } from 'layersharedsession/identity.js';
 import { roomFromUrl } from 'layersharedsession/room.js';
@@ -372,6 +372,11 @@ window.__hallway = {
       jpeg: renderDoorView(renderer, scene, hall, d, { hide: [fade.mesh] }).toDataURL('image/jpeg', quality),
       params: doorView(L, d).params,
     }));
+  },
+  /** The link preview's picture (door-view.js's HALL_VIEW), once the doorways' pictures have loaded: a data: URL. */
+  async hallView(quality = 0.88) {
+    await hall.previewsLoaded;
+    return renderHallView(renderer, scene, hall, { hide: [fade.mesh] }).toDataURL('image/jpeg', quality);
   },
   tick(dt = 1 / 60, n = 1) {
     for (let i = 0; i < n; i++) step(dt);

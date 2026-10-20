@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // Renders the view out of every open door (public/js/door-view.js) in a browser and writes
 // public/views/: <id>.jpg for each, and views.json with the parameters an environment hangs it
-// with (README, "The view from your door"). Run it after changing the hall or its doors, with
-// the dev server running (npm start). --help for usage.
+// with (README, "The view from your door"); and the link preview's picture, public/social.jpg.
+// Run it after changing the hall or its doors, with the dev server running (npm start). --help
+// for usage.
 
 import { execFile } from 'node:child_process';
 import fs from 'node:fs';
@@ -19,14 +20,16 @@ const PORT = 8088; // the dev server's (npm start), unless --port
 const HELP = `Usage: node tools/door-views.mjs [options]
 
 Renders the view out of every open door in a browser, from the dev server (npm start, port ${PORT}),
-and writes <id>.jpg and views.json to public/views/.
+and writes <id>.jpg and views.json to public/views/, and the link preview's picture (the hall from
+near the entrance) to public/social.jpg.
 
 Options:
   --cdp <url>      a desktop browser's DevTools endpoint (one started with --remote-debugging-port,
                    http://localhost:${PORT}/ open in it); without it, a Meta Quest over adb
   --port <n>       the dev server's port (default ${PORT}; node tools/serve.mjs --port <n>)
   --serial <id>    adb device serial, when several devices are connected
-  --out <dir>      where to write them (default public/views)
+  --out <dir>      where to write the views (default public/views)
+  --social <file>  where to write the link preview's picture (default public/social.jpg)
   -h, --help       this help`;
 
 /** views.json: each view's picture and its parameters, by door id. */
@@ -40,6 +43,11 @@ export function viewsJson(views) {
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** Writes a data: URL's JPEG to file. */
+function writeJpeg(file, dataUrl) {
+  fs.writeFileSync(file, Buffer.from(dataUrl.replace(/^data:image\/jpeg;base64,/, ''), 'base64'));
+}
 
 /** Sends one DevTools protocol command to a page and returns its reply. */
 async function send(wsUrl, method, params) {
@@ -96,7 +104,11 @@ async function findPage(endpoint, port, ms) {
 
 async function main() {
   const { values: opts } = parseArgs({
-    options: { cdp: { type: 'string' }, port: { type: 'string', default: String(PORT) }, serial: { type: 'string' }, out: { type: 'string', default: path.join(ROOT, 'public', 'views') }, help: { type: 'boolean', short: 'h' } },
+    options: {
+      cdp: { type: 'string' }, port: { type: 'string', default: String(PORT) }, serial: { type: 'string' },
+      out: { type: 'string', default: path.join(ROOT, 'public', 'views') }, social: { type: 'string', default: path.join(ROOT, 'public', 'social.jpg') },
+      help: { type: 'boolean', short: 'h' },
+    },
   });
   if (opts.help) return console.log(HELP);
   const adb = (...args) => execFileP('adb', opts.serial ? ['-s', opts.serial, ...args] : args, { windowsHide: true }).then((r) => r.stdout);
@@ -122,11 +134,13 @@ async function main() {
     fs.mkdirSync(opts.out, { recursive: true });
     for (const v of views) {
       const file = path.join(opts.out, `${v.id}.jpg`);
-      fs.writeFileSync(file, Buffer.from(v.jpeg.replace(/^data:image\/jpeg;base64,/, ''), 'base64'));
+      writeJpeg(file, v.jpeg);
       console.log(`${path.relative(ROOT, file)}: ${Math.round(fs.statSync(file).size / 1024)} KB · ${JSON.stringify(v.params)}`);
     }
     fs.writeFileSync(path.join(opts.out, 'views.json'), viewsJson(views));
     console.log(`${path.relative(ROOT, path.join(opts.out, 'views.json'))}: ${views.length} view${views.length === 1 ? '' : 's'}`);
+    writeJpeg(opts.social, await evaluate(ws, '__hallway.hallView()'));
+    console.log(`${path.relative(ROOT, opts.social)}: ${Math.round(fs.statSync(opts.social).size / 1024)} KB · the link preview's picture`);
   } finally {
     if (forward) await adb('forward', '--remove', `tcp:${forward}`).catch(() => {});
   }

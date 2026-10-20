@@ -38,11 +38,10 @@ export const ENVIRONMENTS = [
   {
     id: 'music',
     title: 'music',
-    // Its page's description is still vrlbry's (the repository began as a copy): until it has its own.
-    subtitle: 'A virtual library: browse and read the books in your ZIM files on bookshelves, in VR or in the browser.',
+    subtitle: "A virtual music room: read Project Gutenberg's books on music and hear their scores play, on a gramophone or page by page, in VR or in the browser.",
     sign: 'Music Room',
     url: 'https://ariamokr.github.io/music/',
-    // No preview yet: its social.jpg is still vrlbry's, so the doorway shows the title.
+    preview: 'https://ariamokr.github.io/music/social.jpg',
     color: '#9b86d6',
   },
   {
