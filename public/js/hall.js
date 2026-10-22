@@ -5,7 +5,7 @@ import { PANEL, PLAQUE, WINDOW, layoutHall } from './layout.js';
 import { Builder } from './builder.js';
 import { bake, boxOcclusion, lightAt } from './bake.js';
 import * as T from './textures.js';
-import { openingGeometry, placePortal, portalMaterial, setPicture } from './portal.js';
+import { openingGeometry, placePortal, portalMaterial, setPicture } from 'common/portal.js';
 import { ControlPanel } from './panel.js';
 
 const lin = (hex) => {

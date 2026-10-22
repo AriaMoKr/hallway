@@ -7,8 +7,8 @@
 // hall, projected onto the plane of the opposite wall and reaching well above, below and to both
 // sides (the floor and ceiling in front of that wall project onto it too). Hung that far behind
 // an opening, with its horizon at eye height, it looks right through the opening: this is what
-// the doorways' shader does with a picture (portal.js: the picture is the far wall of a box
-// behind the opening). The parameters an environment needs for that come with it (doorView).
+// the doorways' shader does with a picture (common/portal.js: the picture is the far wall of a
+// box behind the opening). The parameters an environment needs for that come with it (doorView).
 //
 // tools/door-views.mjs renders them in a browser and writes public/views/: <id>.jpg for every
 // open door, and views.json with their parameters. It also renders the link preview's picture
@@ -23,8 +23,8 @@ export const VIEW = { width: 2048, height: 1024, eye: 1.6, below: 4.0, above: 2.
 /**
  * A door's view: the eye (in the doorway, just inside the hall, so the jambs are behind it), the
  * yaw it looks along (straight across the hall), the frustum at 1 m (left, right, top, bottom),
- * and the parameters an environment hangs the picture with (as portal.js's portalMaterial takes
- * them): `depth` behind its opening, `pictureHeight`, the horizon at `eye` above its sill and at
+ * and the parameters an environment hangs the picture with (as common/portal.js's portalMaterial
+ * and setView take them): `depth` behind its opening, `pictureHeight`, the horizon at `eye` above its sill and at
  * `horizon` of the picture's height from its bottom, `aspect` its width over its height. Pure.
  */
 export function doorView(L, door, view = VIEW) {

@@ -8,7 +8,7 @@ import { ENVIRONMENTS } from './environments.js';
 import { HALL, doorCrossed, doorSpawn, entranceSpawn } from './layout.js';
 import { buildHall } from './hall.js';
 import { Controls } from './controls.js';
-import { Fade } from './fade.js';
+import { Fade } from 'common/fade.js';
 import { Overlay } from './overlay.js';
 import { arrivalDoorId } from './arrival.js';
 import { doorLink } from 'common/door.js';

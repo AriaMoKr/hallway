@@ -2,7 +2,8 @@
 //   desktop: drag to look, WASD / arrows to walk (Shift runs), click a door or the floor
 //   phone:   drag to look, tap a door or the floor
 //   gamepad: as in vrlbry, it takes over when used and the mouse takes it back: the left stick
-//            walks, the right one looks, A uses what the middle of the view is on (gamepad.js)
+//            walks, the right one looks, A uses what the middle of the view is on
+//            (common/gamepad.js)
 //   headset: point and pull the trigger (or pinch) at a door, the floor or the control panel; the
 //            left stick walks (move 'smooth') or aims a teleport (move 'teleport'), the right one
 //            turns in steps (turn 'snap') or smoothly (turn 'smooth'); or walk through a doorway
@@ -10,7 +11,7 @@
 // pose in VR). Per frame nothing is allocated.
 import * as THREE from 'three';
 import { castRay, clampToHall, panelButtonAt } from './layout.js';
-import { firstPad, readPad } from './gamepad.js';
+import { firstPad, readPad } from 'common/gamepad.js';
 
 const LOOK = 0.0045; // radians per pixel dragged
 const WALK = 1.9, RUN = 3.8, XR_WALK = 1.8; // metres per second

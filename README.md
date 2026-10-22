@@ -160,7 +160,9 @@ What a door's link tells the environment behind it, how an environment links bac
 the contract between the hallway and the sites behind its doors. It is in
 [AriaMoKr/common's README](https://github.com/AriaMoKr/common#readme), with the code that makes and
 reads it: the hallway takes the link a door opens (`doorLink`) from common's `door.js`, and the VR
-movement choice it keeps in `localStorage` (`hallway.nav`) from its `nav.js`.
+movement choice it keeps in `localStorage` (`hallway.nav`) from its `nav.js`. The doorways'
+shader (`portal.js`), the fade (`fade.js`) and the gamepad reading (`gamepad.js`) are common's
+too, shared with the sites behind the doors.
 
 The hallway's own part: `public/js/link.js` measures how a visitor goes through one of its doors
 (`doorPose`, the link's `dx`, `yaw` and `pitch`); `public/js/arrival.js` works out which door a
