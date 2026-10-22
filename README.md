@@ -80,11 +80,11 @@ While in a session:
   you feel it go out), waves to everyone: your head bobs and your name lifts for a moment in their
   hallway, and they get a toast saying you waved. Someone on another page gets the toast only.
 
-The doors keep the session going. A door's link carries the room (`room`, see
-[Going in](#going-in)), and so does its way back. Going through a door, the visitor leaves the
-room at once, so the others see them go. They rejoin when they come back, and on the other side
-too once an environment takes part (none does yet). A visitor in the session but on another page
-counts as elsewhere.
+The doors keep the session going. A door's link carries the room (`room`, see common's
+[Going in](https://github.com/AriaMoKr/common#going-in)), and so does its way back. Going through
+a door, the visitor leaves the room at once, so the others see them go. They rejoin when they
+come back, and on the other side too once an environment takes part (none does yet). A visitor in
+the session but on another page counts as elsewhere.
 
 It runs peer to peer over WebRTC, with no server of its own:
 [Trystero](https://github.com/dmotz/trystero) finds the other visitors through public Nostr
@@ -96,7 +96,7 @@ logs who came, went, renamed and waved. Its Wave and the hallway's reach each ot
 ## Running it
 
 ```bash
-npm install     # three.js, the shared-session layer and Trystero (and IWER, for emulating a headset), copied into public/vendor/
+npm install     # three.js, common, the shared-session layer and Trystero (and IWER, for emulating a headset), copied into public/vendor/
 npm start       # http://localhost:8088/
 npm test
 ```
@@ -148,121 +148,34 @@ A preview is the room seen through the doorway. A screenshot taken at eye height
 straight ahead, works best: its horizon is placed at eye level, a little above the middle.
 
 A new door changes what the doors across the hall look out on, so render the door views again
-(see "The view from your door") and commit them with it.
+(see "Rendering the door views") and commit them with it.
 
-The `url` may have a query of its own, but not the parameters below, which the hallway adds (a
-test checks).
+The `url` may have a query of its own, but not the parameters a door's link adds (common's
+`LINK_PARAMS`: a test checks).
 
-## Going in
+## The door contract
 
-A door opens its environment's `url` with the visit added to the query, so the environment can
-carry the view on from the doorway. Walking through vrlbry's door a little right of centre,
-turned slightly to the right and looking a little down, opens:
+What a door's link tells the environment behind it, how an environment links back to the hallway
+(and keeps a visitor in VR on the way), and the view from each door that the hallway publishes are
+the contract between the hallway and the sites behind its doors. It is in
+[AriaMoKr/common's README](https://github.com/AriaMoKr/common#readme), with the code that makes and
+reads it: the hallway takes the link a door opens (`doorLink`) from common's `door.js`, and the VR
+movement choice it keeps in `localStorage` (`hallway.nav`) from its `nav.js`.
 
-```
-https://ariamokr.github.io/vrlbry/?place=%7Egutenberg_en_all_2025-11&from=hallway&back=https%3A%2F%2Fariamokr.github.io%2Fhallway%2F%3Ffrom%3Dvrlbry&dx=0.12&yaw=-8&pitch=-3&dw=1.1&dh=2.25&glow=d9b26a
-```
+The hallway's own part: `public/js/link.js` measures how a visitor goes through one of its doors
+(`doorPose`, the link's `dx`, `yaw` and `pitch`); `public/js/arrival.js` works out which door a
+visitor came back out of (`?from=`, Back, or the referrer); and the page takes a VR session that
+Quest Browser grants it (`sessiongranted`) at once, so a visitor coming back in VR stays in VR.
 
-| Parameter | Example | Meaning |
-|---|---|---|
-| `from` | `hallway` | Who sent the visitor. |
-| `back` | `https://ariamokr.github.io/hallway/?from=vrlbry` | The way back: a link to it brings the visitor out in front of this door. |
-| `dx` | `0.12` | Where the visitor went through: metres from the doorway's centre, + to their right as they face in. Always within the opening. |
-| `yaw` | `-8` | Which way they faced: degrees from straight in, + to the left (as three.js's `rotation.y`), from -90 to 90. |
-| `pitch` | `-3` | How far up they looked, in degrees, + up. Left out in VR, where the headset gives it. |
-| `dw`, `dh` | `1.1`, `2.25` | The doorway's width and height in metres. |
-| `glow` | `d9b26a` | The doorway's colour (the door's `color`), hex without the `#`. |
-| `room` | `k3vd-q8hn` | The shared session the visitor is in ([Together](#together)). `back` carries it too. Only in a session. |
+## Rendering the door views
 
-`dx`, `yaw` and `pitch` are there only when the visitor goes in through the doorway in 3D, by
-walking through it or by pointing at it. Pointing from across the hall gives the pose they
-pointed from, with `dx` kept within the opening. The doors list beside the view sends the rest
-without them, and the `<noscript>` list links to the bare `url`.
-
-An environment can use them to:
-
-- **Carry the view on.** The doorway shows the environment's preview as if it was taken from the
-  threshold at eye height (1.6 m), facing straight in. Arriving the visitor where the preview was
-  taken, moved `dx` sideways and turned by `yaw`, continues what they saw through the doorway.
-- **Draw its own door back**, `dw` by `dh`, glowing in `glow`, leading to `back`.
-- **Read them once.** Take them off the address with `history.replaceState` after reading them,
-  so a reload, Back or a shared link doesn't repeat the arrival. Reading `location.search` takes
-  no time, so it doesn't delay the VR hand-over (below). Leave `room` in the address: it names
-  the session the page is in, and it is the invitation to it.
-- **Stay in the session.** With `room`, join the same room through
-  [layersharedsession](https://github.com/AriaMoKr/layersharedsession) (the same app id as the
-  hallway's, in `together.js`), and keep `room` on every link back.
-
-An environment that ignores them loses nothing: they are ordinary query parameters. The VR
-movement choices from the control panel are not in the link: they are in `localStorage` under
-`hallway.nav` (`{"move":"smooth","turn":"snap"}`), which environments on `ariamokr.github.io` can
-read.
-
-## Linking back
-
-An environment brings visitors back by linking to the hallway with its own id, the URL a door's
-link gives as `back`:
-
-```
-https://ariamokr.github.io/hallway/?from=vrlbry
-```
-
-Without `?from=`, the hallway also recognizes a referrer from inside an environment's URL, and
-Back from an environment returns to the door the visitor left by. With `&room=`, as `back` has
-in a shared session, the visitor rejoins that session in the hallway.
-
-**Staying in VR across the trip.** When a page navigates during an immersive session, Quest
-Browser can grant the next page a session without a click: it fires `sessiongranted` on
-`navigator.xr`. The hallway listens for it, so a visitor who walks back in from an environment's
-VR stays in VR. For the same to work in the other direction, an environment listens too and
-starts its session at once:
-
-```js
-navigator.xr?.addEventListener('sessiongranted', () => {
-  // The same call the page's Enter VR button makes.
-  navigator.xr.requestSession('immersive-vr', { optionalFeatures: ['local-floor'] })
-    .then((session) => renderer.xr.setSession(session));
-});
-```
-
-Without that listener, the visitor arrives at the environment's 2D page and presses its Enter VR
-button. vrlbry, Breadboard 8-bit's VR view, music and Outside all listen.
-
-The hand-over has two limits, measured on a Quest with Quest Browser 152 (vrlbry,
-[`7eca62b`](https://github.com/AriaMoKr/vrlbry/commit/7eca62b)):
-
-- **One origin only.** A navigation to another origin (another domain, or another port) gets no
-  grant, so the visitor arrives at the 2D page. The hallway and all four environments are on
-  `ariamokr.github.io`, so the hand-over can work between them.
-- **About 5 seconds.** The grant arrives about 0.1 s after the next page starts. A request made up
-  to 4.7 s later starts the session, while one at 5.2 s is refused as needing a click. Ask for the
-  session as soon as the page can draw a frame, not once everything else has loaded.
-
-## The view from your door
-
-An environment's way back to the hallway can show the hallway as seen from its own door. For every
-open door the site publishes that view, rendered from the doorway at eye height looking straight
-across the hall:
+For every open door the site publishes the view from it, as common's README describes
+([The view from your door](https://github.com/AriaMoKr/common#the-view-from-your-door)):
 
 ```
 https://ariamokr.github.io/hallway/views/views.json
 https://ariamokr.github.io/hallway/views/<id>.jpg
 ```
-
-`views.json` has, for each door id, its picture's file name and how to hang it behind an opening
-of your own (2:1, 2048 × 1024):
-
-```json
-"vrlbry": { "image": "vrlbry.jpg", "depth": 2.94, "pictureHeight": 6.5, "eye": 1.6, "horizon": 0.6154, "aspect": 2 }
-```
-
-The picture is a flat wall `depth` metres behind the opening, `pictureHeight` tall and `aspect`
-times as wide, centred on the opening, with its horizon `eye` metres above the sill and at
-`horizon` of its height from its bottom. It is a perspective view projected onto the plane of the
-opposite wall, so the floor and ceiling in front of that wall are in it too: hung that way (as
-`public/js/portal.js` hangs a picture), the hall looks right through your doorway, with some
-parallax. [vrlbry](https://github.com/AriaMoKr/vrlbry) shows its view through the door back in
-its library, and keeps a painted one for when this file cannot be read.
 
 The views change when the hall or its doors do. To render them again with a Quest connected over
 adb, serve the site on IPv4 (see "Running it") and run the tool with the same port:

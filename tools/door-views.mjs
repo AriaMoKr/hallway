@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Renders the view out of every open door (public/js/door-view.js) in a browser and writes
 // public/views/: <id>.jpg for each, and views.json with the parameters an environment hangs it
-// with (README, "The view from your door"); and the link preview's picture, public/social.jpg.
+// with (AriaMoKr/common's README, "The view from your door"); and the link preview's picture,
+// public/social.jpg.
 // Run it after changing the hall or its doors, with the dev server running (npm start). --help
 // for usage.
 
@@ -35,7 +36,7 @@ Options:
 /** views.json: each view's picture and its parameters, by door id. */
 export function viewsJson(views) {
   const out = {
-    about: 'The view out of each of the hallway\'s open doors: hang <image> behind your door back to the hallway (README, "The view from your door").',
+    about: 'The view out of each of the hallway\'s open doors: hang <image> behind your door back to the hallway (https://github.com/AriaMoKr/common#the-view-from-your-door).',
     views: {},
   };
   for (const v of views) out.views[v.id] = { image: `${v.id}.jpg`, ...v.params };

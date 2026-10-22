@@ -1,17 +1,9 @@
-// The link a door opens: its environment's URL with how the visitor came through the doorway, so
-// the environment can carry the view on from it (README: Going in). Pure, for the tests.
+// How a visitor goes through a door, in the doorway's own terms: the pose a door's link carries
+// (common/door.js's doorLink makes the link, AriaMoKr/common's README "Going in" says what it
+// means). It measures the hallway's own layout, so it stays here. Pure, for the tests.
 
-/** The hallway's name in `from`. */
-export const HALLWAY_ID = 'hallway';
-
-/** The query parameters the hallway adds to a door's URL. A door's own URL must not use them. */
-export const LINK_PARAMS = ['from', 'back', 'dx', 'yaw', 'pitch', 'dw', 'dh', 'glow', 'room'];
-
-const DEG = 180 / Math.PI;
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const wrapAngle = (a) => Math.atan2(Math.sin(a), Math.cos(a));
-/** v with at most `digits` decimals, no trailing zeros and no minus on a zero. */
-const num = (v, digits) => String(+v.toFixed(digits));
 
 /**
  * How a head at (x, z), looking along (dx, dy, dz), goes through a door, in the doorway's own
@@ -27,37 +19,4 @@ export function doorPose(L, door, x, z, dx, dy, dz) {
   const yaw = clamp(wrapAngle(Math.atan2(-dx, -dz) - inward), -Math.PI / 2, Math.PI / 2);
   const pitch = Math.asin(clamp(dy / (Math.hypot(dx, dy, dz) || 1), -1, 1));
   return { across, yaw, pitch };
-}
-
-/**
- * The URL env's door opens.
- * @param {{id: string, url: string, color: string}} env  an entry of environments.js
- * @param {object} o
- * @param {string} o.here  this page's URL: the way back is it with ?from=<env.id>
- * @param {{doorWidth: number, doorHeight: number}} o.hall
- * @param {{across: number, yaw: number, pitch: number}} [o.pose]  doorPose; none for the doors list
- * @param {boolean} [o.xr]  in VR the headset gives the pitch, so it is left out
- * @param {string|null} [o.room]  the shared session the visitor is in (together.js): the
- *   environment's link and the way back both carry it, so the visitor stays in the session
- */
-export function doorLink(env, { here, hall, pose = null, xr = false, room = null }) {
-  const back = new URL(here);
-  back.search = '';
-  back.hash = '';
-  back.searchParams.set('from', env.id);
-  if (room) back.searchParams.set('room', room);
-  const url = new URL(env.url);
-  const q = url.searchParams;
-  q.set('from', HALLWAY_ID);
-  q.set('back', back.href);
-  if (pose) {
-    q.set('dx', num(pose.across, 2));
-    q.set('yaw', num(pose.yaw * DEG, 0));
-    if (!xr) q.set('pitch', num(pose.pitch * DEG, 0));
-  }
-  q.set('dw', num(hall.doorWidth, 2));
-  q.set('dh', num(hall.doorHeight, 2));
-  q.set('glow', env.color.replace(/^#/, '').toLowerCase());
-  if (room) q.set('room', room);
-  return url.href;
 }

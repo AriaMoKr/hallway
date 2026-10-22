@@ -37,7 +37,7 @@ export class ControlPanel {
 
   /**
    * What it shows, all or part of it: vr is 'exit' (in VR), 'enter' (VR available) or 'none'; move
-   * and turn as in settings.js; room is the shared session's (null when not in one), link its
+   * and turn as in common/nav.js; room is the shared session's (null when not in one), link its
    * invite link, status how it's going, people who else is in it (presence.js peopleText).
    */
   set(state) {

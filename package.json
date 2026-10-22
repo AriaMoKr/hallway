@@ -2,7 +2,14 @@
   "name": "hallway",
   "version": "0.1.0",
   "description": "A WebXR hallway whose doors lead to other environments, such as vrlbry's virtual library: in VR, on a desktop or on a phone.",
-  "keywords": ["webxr", "virtual-reality", "threejs", "meta-quest", "portal", "hub"],
+  "keywords": [
+    "webxr",
+    "virtual-reality",
+    "threejs",
+    "meta-quest",
+    "portal",
+    "hub"
+  ],
   "homepage": "https://ariamokr.github.io/hallway/",
   "repository": {
     "type": "git",
@@ -23,7 +30,8 @@
     "test": "node --test \"test/*.test.js\""
   },
   "dependencies": {
-    "layersharedsession": "github:AriaMoKr/layersharedsession#c6420409f1e742a1cfaf30646106812f666bca2b",
+    "common": "github:AriaMoKr/common#v0.1.0",
+    "layersharedsession": "github:AriaMoKr/layersharedsession#v0.2.0",
     "three": "0.186.1",
     "trystero": "0.26.0"
   },

@@ -1,6 +1,6 @@
 // Who is in the shared session (together.js), in words: where a visitor is, how the session is
 // doing, and the others for the control panel. Pure, for the tests.
-import { HALLWAY_ID } from './link.js';
+import { HALLWAY_ID } from 'common/door.js';
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 

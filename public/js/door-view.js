@@ -1,6 +1,7 @@
-// The view out of a door (README, "The view from your door"): what someone standing in a doorway
-// sees of the hall, rendered as one picture for the environment behind that door, so that the way
-// back to the hallway in that environment shows the hall as it is, from the right place.
+// The view out of a door (AriaMoKr/common's README, "The view from your door"): what someone
+// standing in a doorway sees of the hall, rendered as one picture for the environment behind that
+// door, so that the way back to the hallway in that environment shows the hall as it is, from the
+// right place.
 //
 // The picture is a perspective view from the doorway at eye height, looking straight across the
 // hall, projected onto the plane of the opposite wall and reaching well above, below and to both

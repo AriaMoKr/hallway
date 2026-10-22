@@ -1,7 +1,8 @@
 // The hallway's doors, in order: the first is nearest the entrance, on the left, and the next ones
 // alternate sides down the hall. Doors past the end of this list are drawn closed.
 //
-//   id        short, unique, URL-safe; an environment links back with ?from=<id> (README, "Linking back")
+//   id        short, unique, URL-safe; an environment links back with ?from=<id> (AriaMoKr/common's
+//             README, "Linking back")
 //   title     its repository's name, on the plaque beside the door and in the list of doors
 //   subtitle  its page's description (<meta name="description">) word for word, under the title
 //             on the plaque (which shrinks the text until all of it fits)
