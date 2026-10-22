@@ -11,7 +11,7 @@ room where Project Gutenberg's books on music play their scores; and
 read on. Walk the hallway in VR on a Meta Quest, on a desktop or on a phone. There is nothing to
 install.
 
-![The hallway: a library's bookcases through an open door under a Library sign, and more doors and signs down a chequered floor to a window at dusk](public/social.jpg)
+![The hallway: a library's bookcases through an open door under a Library sign, and more doors and signs down a chequered floor to a window onto fields in the afternoon](public/social.jpg)
 
 Each open doorway shows the room behind it: the environment's picture, seen with parallax (and
 depth, in a headset), behind a glowing veil. A door without a picture shows its name instead.

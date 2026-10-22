@@ -35,7 +35,8 @@ export function buildHall(envs, { anisotropy = 1 } = {}) {
   for (const d of L.doors) {
     if (d.env) lights.push({ p: [d.side * (hw + 0.35), 1.15, d.z], c: lin(d.env.color), i: 1.6, r: 0.95, wrap: 0.3 });
   }
-  lights.push({ p: [0, 1.9, z1 + 0.25], c: lin('#9aa8d8'), i: 0.45, r: 1.1, wrap: 0.2 });
+  // The window's daylight: outside's late afternoon (textures.js's skyTexture), a hazy blue sky.
+  lights.push({ p: [0, 1.9, z1 + 0.25], c: lin('#d6dbe0'), i: 0.6, r: 1.2, wrap: 0.2 });
   const lighting = { lights, sky: lin('#83745f'), ground: lin('#5e5142') };
   const occlusion = boxOcclusion({ x0: -hw, x1: hw, y0: 0, y1: H, z0: z1, z1: z0 });
   const lit = (builder) => bake(builder, lighting, occlusion).toGeometry();

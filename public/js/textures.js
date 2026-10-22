@@ -378,44 +378,194 @@ export function previewFallback(env) {
   return texture(c);
 }
 
-/** The view out of the end window: dusk over far hills. 2:1, the horizon at 30 % up. */
+// The view out of the end window: the same late afternoon as outside's garden (AriaMoKr/outside,
+// public/js/sky.js; keep them in step): its sky's colours and haze, its low sun in the west, its
+// hills and a line of trees, a few clouds lit gold toward the sun. Painted as the flat picture the
+// window hangs (hall.js: 40 m behind it, 50 m tall, the horizon 30 % up), looking down the hall
+// (-z) as one would look down the garden, so every pixel is the direction it shows from the window.
+const SKY = { depth: 40, height: 50, horizon: 0.3 };
+/** Outside's sun (its bake.js SUN_DIR): low, to the left of straight ahead, about 25° up. */
+const SUN = (() => {
+  const v = [-0.72, 0.43, -0.55], n = Math.hypot(...v);
+  return v.map((x) => x / n);
+})();
+const SUN_AZ = Math.atan2(SUN[0], -SUN[2]);
+const DEG = Math.PI / 180;
+const hex = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+const smooth = (a, b, v) => {
+  const t = Math.min(1, Math.max(0, (v - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
+const rgb = (c) => `rgb(${c.map(Math.round).join(',')})`;
+// Outside's palette.
+const ZENITH = hex('#3f6db3'), HIGH = hex('#6f97cf'), LOW = hex('#b9cde3'), HORIZON = hex('#e8dcc6');
+const SUNNY = hex('#ffd08a'), WARM_HAZE = hex('#f6cf9c'), COOL_HAZE = hex('#c9d3dd');
+
+/** Outside's sky colour (sRGB 0…255) at elevation el, where toSun is the cosine from the sun. */
+function skyColor(el, toSun) {
+  const sunny = Math.max(0, toSun);
+  const k = Math.sqrt(Math.max(0, el) / (Math.PI / 2));
+  let c = mix(HORIZON, LOW, smooth(0, 0.3, k));
+  c = mix(c, HIGH, smooth(0.25, 0.65, k));
+  c = mix(c, ZENITH, smooth(0.6, 1, k));
+  const haze = Math.exp(-Math.max(0, el) / (4 * DEG));
+  c = mix(c, mix(COOL_HAZE, WARM_HAZE, sunny ** 2), haze * 0.7);
+  const glow = sunny ** 6 * 0.5 * (1 - 0.5 * k) + sunny ** 60 * 0.55;
+  return mix(c, SUNNY, Math.min(1, glow));
+}
+
+/** Outside's hill ranges: their tops' elevation (degrees, times amp, plus base) at an azimuth. */
+const ridge = (az, terms) => terms.reduce((s, [n, a, p]) => s + a * Math.sin(n * az + p), 0);
+const FAR_HILLS = [[2, 0.7, 0.4], [3, 0.5, 1.9], [5, 0.35, 2.7], [8, 0.18, 0.2], [13, 0.08, 1.1]];
+const NEAR_HILLS = [[1, 0.6, 2.2], [4, 0.45, 0.3], [6, 0.3, 1.4], [11, 0.12, 2.0]];
+
+/** The end window's view: outside's late afternoon. 2:1, the horizon at 30 % up. */
 export function skyTexture() {
-  const W = 1024, H = 512;
-  const c = canvas(W, H), g = c.getContext('2d'), r = rng(21);
-  const horizon = H * 0.7;
-  const sky = g.createLinearGradient(0, 0, 0, horizon);
-  sky.addColorStop(0, '#0a1230');
-  sky.addColorStop(0.45, '#253266');
-  sky.addColorStop(0.78, '#8a5a7a');
-  sky.addColorStop(0.93, '#e09060');
-  sky.addColorStop(1, '#f6c27e');
-  g.fillStyle = sky;
-  g.fillRect(0, 0, W, horizon);
-  for (let k = 0; k < 260; k++) {
-    const y = r() * horizon * 0.6;
-    g.fillStyle = `rgba(255,250,235,${(0.25 + 0.75 * r()) * (1 - y / (horizon * 0.6))})`;
-    const s = r() < 0.08 ? 2 : 1;
-    g.fillRect(r() * W, y, s, s);
-  }
-  // Two ranges of hills, the nearer darker.
-  for (const [color, h, rough] of [['#463650', 40, 0.6], ['#211a2b', 22, 1]]) {
-    g.fillStyle = color;
-    g.beginPath();
-    g.moveTo(0, H);
-    for (let x = 0; x <= W; x += 16) {
-      const y = horizon - h * (0.5 + 0.5 * Math.sin(x * 0.006 * rough + h)) - 10 * r() * rough;
-      g.lineTo(x, y);
+  const W = 1024, H = 512, u = W / 2048; // u: a pixel's size, for sizes given at 2048 wide
+  const c = canvas(W, H), g = c.getContext('2d'), r = rng(81);
+  const halfWidth = SKY.height; // the picture is twice as wide as it is tall
+  // A pixel's direction, and where a direction falls on the picture.
+  const dir = (x, y) => {
+    const X = (x / W - 0.5) * 2 * halfWidth, Y = (1 - y / H - SKY.horizon) * SKY.height;
+    const n = Math.hypot(X, Y, SKY.depth);
+    return [X / n, Y / n, -SKY.depth / n];
+  };
+  const toX = (az) => (SKY.depth * Math.tan(az) / (2 * halfWidth) + 0.5) * W;
+  const toY = (az, el) => (1 - SKY.horizon - (SKY.depth * Math.tan(el)) / Math.cos(az) / SKY.height) * H;
+
+  // The sky, worked out per pixel on a small picture, then scaled up (it is smooth).
+  const w = 128, h = 64;
+  const small = canvas(w, h), sg = small.getContext('2d');
+  const img = sg.createImageData(w, h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const d = dir(((x + 0.5) / w) * W, ((y + 0.5) / h) * H);
+      const col = skyColor(Math.asin(d[1]), d[0] * SUN[0] + d[1] * SUN[1] + d[2] * SUN[2]);
+      const k = (y * w + x) * 4;
+      img.data[k] = col[0];
+      img.data[k + 1] = col[1];
+      img.data[k + 2] = col[2];
+      img.data[k + 3] = 255;
     }
-    g.lineTo(W, H);
+  }
+  sg.putImageData(img, 0, 0);
+  g.imageSmoothingEnabled = true;
+  g.drawImage(small, 0, 0, W, H);
+
+  // Clouds: soft heaps of puffs, lit gold toward the sun (on the left), grey away from it.
+  const pxPerDeg = (SKY.depth * Math.tan(DEG) / (2 * halfWidth)) * W;
+  for (let k = 0; k < 7; k++) {
+    const az = k < 3 ? SUN_AZ + 0.15 + r() * 0.45 : -0.6 + r() * 1.4;
+    const el = (9 + r() * 22) * DEG;
+    const lit = Math.max(0, Math.cos(el) * Math.cos(Math.asin(SUN[1])) * Math.cos(az - SUN_AZ) + Math.sin(el) * SUN[1]);
+    const size = ((2.5 + r() * 3.5) * pxPerDeg) / Math.cos(az);
+    const puffs = 5 + Math.floor(r() * 6);
+    for (let p = 0; p < puffs; p++) {
+      const cx = toX(az) + (r() - 0.5) * size * 3.2, cy = toY(az, el) + (r() - 0.5) * size * 0.55;
+      const pr = size * (0.35 + 0.4 * r());
+      const sx = Math.sign(SUN_AZ - az) * pr * 0.3, sy = -pr * 0.25;
+      const grad = g.createRadialGradient(cx + sx, cy + sy, pr * 0.1, cx, cy, pr);
+      grad.addColorStop(0, `rgba(255,${Math.round(252 - 14 * lit)},${Math.round(246 - 40 * lit)},0.82)`);
+      grad.addColorStop(0.6, `rgba(${Math.round(238 + 10 * lit)},${Math.round(236 - 4 * lit)},${Math.round(238 - 20 * lit)},0.55)`);
+      grad.addColorStop(0.85, 'rgba(225,222,228,0.2)');
+      grad.addColorStop(1, 'rgba(220,220,228,0)');
+      g.fillStyle = grad;
+      g.beginPath();
+      g.ellipse(cx, cy, pr * 1.5, pr * 0.62, 0, 0, Math.PI * 2);
+      g.fill();
+    }
+  }
+
+  // The sun is just past the picture's left edge: its wide glow reaches in.
+  const sunX = toX(SUN_AZ), sunY = toY(SUN_AZ, Math.asin(SUN[1])), glow = 38 * pxPerDeg;
+  const sunGlow = g.createRadialGradient(sunX, sunY, 0, sunX, sunY, glow);
+  sunGlow.addColorStop(0, 'rgba(255,220,160,0.28)');
+  sunGlow.addColorStop(1, 'rgba(255,210,150,0)');
+  g.fillStyle = sunGlow;
+  g.fillRect(0, sunY - glow, sunX + glow, 2 * glow);
+
+  // Far hills, blue in the haze, washed warm toward the sun; then nearer ones; then trees.
+  const horizonY = (1 - SKY.horizon) * H;
+  const sunnyAt = (az) => Math.max(0, Math.cos(az - SUN_AZ)) ** 4;
+  const azAt = (x) => Math.atan(((x / W - 0.5) * 2 * halfWidth) / SKY.depth);
+  const range = (terms, base, amp, colors) => {
+    const grad = g.createLinearGradient(0, 0, W, 0);
+    for (let i = 0; i <= 8; i++) grad.addColorStop(i / 8, rgb(mix(hex(colors[0]), hex(colors[1]), sunnyAt(azAt((i / 8) * W)))));
+    g.fillStyle = grad;
+    g.beginPath();
+    g.moveTo(0, horizonY + 4);
+    for (let x = 0; x <= W; x += 4 * u) {
+      const az = azAt(x);
+      g.lineTo(x, toY(az, (base + amp * ridge(az, terms)) * DEG));
+    }
+    g.lineTo(W, horizonY + 4);
+    g.closePath();
+    g.fill();
+  };
+  range(FAR_HILLS, 2.2, 1.5, ['#a3afc0', '#e3cdb2']);
+  range(NEAR_HILLS, 1.1, 1.0, ['#7f9184', '#c9b996']);
+  for (let x = -20 * u; x < W + 20 * u; x += (6 + r() * 10) * u) {
+    const az = azAt(x);
+    const top = (0.5 + 1.2 * r() + 0.4 * Math.sin(az * 7)) * DEG;
+    const rad = (horizonY - toY(az, top)) * (0.7 + 0.4 * r());
+    const col = mix(hex('#56654a'), hex('#a39a78'), sunnyAt(az) * 0.7);
+    g.fillStyle = rgb(col.map((v) => v * (0.9 + 0.2 * r())));
+    g.beginPath();
+    g.ellipse(x, horizonY - rad * 0.4, rad * (0.9 + 0.5 * r()), rad, 0, 0, Math.PI * 2);
     g.fill();
   }
-  // A few lights in the valley.
-  for (let k = 0; k < 18; k++) {
-    g.fillStyle = `rgba(255,214,140,${0.5 + 0.5 * r()})`;
-    g.fillRect(r() * W, horizon + 4 + r() * 30, 2, 2);
+  // Below the horizon, fields falling away from the hall: bands, nearer ones deeper, cut into fields
+  // whose sides run to the horizon straight ahead; each a green or the gold of dry grass, hazier with
+  // distance and warmer toward the sun, with hedgerows round it and a few trees along its far edge.
+  const FIELDS = ['#7d8a5e', '#6f7f4a', '#8e9460', '#a39a63', '#738653', '#66753f'].map(hex);
+  const HEDGE = hex('#4c5a3a');
+  const vx = W / 2, bands = 7;
+  /** x where a field's side, which meets the horizon at vx and the foot of the picture at foot, is at y. */
+  const side = (foot, y) => vx + ((foot - vx) * (y - horizonY)) / (H - horizonY);
+  for (let b = 0; b < bands; b++) { // far to near, so a hedgerow's trees stand over the field beyond
+    const top = horizonY + 1 + (H - horizonY) * (b / bands) ** 1.8;
+    const bottom = b === bands - 1 ? H : horizonY + 1 + (H - horizonY) * ((b + 1) / bands) ** 1.8;
+    const far = 1 - b / bands, haze = 0.45 * far ** 2;
+    const scale = ((bottom - top) / ((H - horizonY) / bands)) * u;
+    const feet = [-3 * W];
+    for (let f = -3 * W + r() * W; f < 4 * W; f += (0.4 + r() * 0.9) * W) feet.push(f);
+    feet.push(4 * W);
+    g.save();
+    g.beginPath();
+    g.rect(0, top, W, bottom - top + 1);
+    g.clip();
+    for (let f = 0; f + 1 < feet.length; f++) {
+      const mid = side((feet[f] + feet[f + 1]) / 2, (top + bottom) / 2);
+      const col = mix(mix(FIELDS[Math.floor(r() * FIELDS.length)], COOL_HAZE, haze), WARM_HAZE, 0.25 * far * sunnyAt(azAt(mid)));
+      g.fillStyle = rgb(col);
+      g.beginPath();
+      g.moveTo(side(feet[f], top), top);
+      g.lineTo(side(feet[f + 1], top), top);
+      g.lineTo(side(feet[f + 1], bottom + 1), bottom + 1);
+      g.lineTo(side(feet[f], bottom + 1), bottom + 1);
+      g.closePath();
+      g.fill();
+    }
+    // Hedgerows: along the band's far edge, and down the fields' sides.
+    g.strokeStyle = g.fillStyle = rgb(mix(HEDGE, COOL_HAZE, 0.4 * far ** 2));
+    g.fillRect(0, top - 1.5 * scale, W, 3 * scale);
+    g.lineWidth = 2 * scale;
+    for (let f = 1; f + 1 < feet.length; f++) {
+      g.beginPath();
+      g.moveTo(side(feet[f], top), top);
+      g.lineTo(side(feet[f], bottom), bottom);
+      g.stroke();
+    }
+    g.restore();
+    for (let x = r() * 150 * u; x < W; x += (50 + r() * 220) * u) {
+      const rad = (4 + r() * 6) * scale;
+      g.fillStyle = rgb(mix(hex('#56654a'), COOL_HAZE, 0.4 * far ** 2).map((v) => v * (0.85 + 0.25 * r())));
+      g.beginPath();
+      g.ellipse(x, top - rad * 0.7, rad * (0.9 + 0.5 * r()), rad, 0, 0, Math.PI * 2);
+      g.fill();
+    }
   }
-  g.fillStyle = '#120e16';
-  g.fillRect(0, horizon + 40, W, H - horizon - 40);
   return texture(c);
 }
 
