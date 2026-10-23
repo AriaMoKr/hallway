@@ -6,6 +6,7 @@ import { Builder } from './builder.js';
 import { bake, boxOcclusion, lightAt } from './bake.js';
 import * as T from './textures.js';
 import { openingGeometry, placePortal, portalMaterial, setPicture } from 'common/portal.js';
+import { SUN_DIR, skyColor, skyMaterial, skyTexture } from 'common/sky.js';
 import { ControlPanel } from './panel.js';
 
 const lin = (hex) => {
@@ -17,6 +18,16 @@ const WOOD = lin('#6a4329');
 const DARK_WOOD = lin('#3e2617');
 const BRASS = lin('#c9a15a');
 const CREAM = lin('#e6dbc3');
+
+/** The window's daylight: common's sky (outside's late afternoon) a little over the horizon, straight out of the window (-z). */
+const DAYLIGHT = (() => {
+  const el = (12 * Math.PI) / 180;
+  const [r, g, b] = skyColor(el, -Math.cos(el) * SUN_DIR[2] + Math.sin(el) * SUN_DIR[1]);
+  const c = new THREE.Color().setRGB(r / 255, g / 255, b / 255, THREE.SRGBColorSpace);
+  return [c.r, c.g, c.b];
+})();
+/** The window's eye height, where the fields' horizon is. */
+const WINDOW_EYE = 1.55;
 
 // The room seen through a doorway: its picture hangs this far back, its horizon at eye height.
 const PICTURE = { depth: 2.4, height: 3.0, eye: 1.6, horizon: 0.56 };
@@ -35,8 +46,7 @@ export function buildHall(envs, { anisotropy = 1 } = {}) {
   for (const d of L.doors) {
     if (d.env) lights.push({ p: [d.side * (hw + 0.35), 1.15, d.z], c: lin(d.env.color), i: 1.6, r: 0.95, wrap: 0.3 });
   }
-  // The window's daylight: outside's late afternoon (textures.js's skyTexture), a hazy blue sky.
-  lights.push({ p: [0, 1.9, z1 + 0.25], c: lin('#d6dbe0'), i: 0.6, r: 1.2, wrap: 0.2 });
+  lights.push({ p: [0, 1.9, z1 + 0.25], c: DAYLIGHT, i: 0.6, r: 1.2, wrap: 0.2 });
   const lighting = { lights, sky: lin('#83745f'), ground: lin('#5e5142') };
   const occlusion = boxOcclusion({ x0: -hw, x1: hw, y0: 0, y1: H, z0: z1, z1: z0 });
   const lit = (builder) => bake(builder, lighting, occlusion).toGeometry();
@@ -181,16 +191,25 @@ export function buildHall(envs, { anisotropy = 1 } = {}) {
   });
   group.add(globes);
 
-  // The view out of the window.
+  // The view out of the window: common's sky on the glass, at infinity (outside's late afternoon,
+  // yaw 0: looking down the hall as one looks down the garden), drawn first and writing no depth,
+  // and in front of it the hallway's own fields (textures.js), a picture hung FIELDS.depth out.
   const windowHeight = WINDOW.top - WINDOW.bottom;
-  const view = new THREE.Mesh(
-    openingGeometry(WINDOW.width, windowHeight),
-    portalMaterial({ map: T.skyTexture(), width: WINDOW.width, height: windowHeight, depth: 40, pictureHeight: 50, eye: 1.55 - WINDOW.bottom, horizon: 0.3 }),
+  const sky = skyMaterial(skyTexture(), { yaw: 0 });
+  sky.depthWrite = false;
+  const glass = new THREE.Mesh(openingGeometry(WINDOW.width, windowHeight), sky);
+  glass.name = 'window';
+  glass.renderOrder = -1;
+  glass.position.set(0, WINDOW.bottom, z1 - 0.15);
+  group.add(glass);
+  const F = T.FIELDS;
+  const fields = new THREE.Mesh(
+    new THREE.PlaneGeometry(F.width, F.above + F.below),
+    new THREE.MeshBasicMaterial({ map: T.fieldsTexture(), transparent: true, depthWrite: false }),
   );
-  view.name = 'window';
-  view.position.set(0, WINDOW.bottom, z1 - 0.15);
-  group.add(view);
-  placePortal(view);
+  fields.name = 'fields';
+  fields.position.set(0, WINDOW_EYE + (F.above - F.below) / 2, z1 - 0.15 - F.depth);
+  group.add(fields);
 
   // A portal in each open doorway.
   const portals = [];
