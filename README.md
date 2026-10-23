@@ -49,11 +49,16 @@ it (or click it) to enter or exit VR, and to choose how to move in VR:
 - **Turn: Smooth**: the right stick turns you while held.
 
 The trigger (or a pinch) at the floor teleports in either mode, and every teleport blinks the
-view black for a moment. The choices are kept in this browser.
+view black for a moment. The choices are kept in this browser, for the hallway and the places
+behind its doors.
+
+The same choices, and Start / Leave shared session, are under **Settings** in the card with the
+doors list, as ordinary controls a keyboard or a screen reader can reach. The doors list is the
+hallway as text: each door is a link, its name in a tint of its glow that reads at 4.5:1.
 
 ## Together
 
-The panel's **Start shared session** makes a room and puts it in the address
+The panel's **Start shared session** (or the one under Settings) makes a room and puts it in the address
 (`?room=k3vd-q8hn`). That address is the invitation: anyone who opens it joins the room and sees
 the others in the hallway, each as a head with a visor on its front, their hands in VR, a ring on
 the floor and their name. Arrivals stand on different spots, at the entrance or in front of the

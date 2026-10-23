@@ -2,7 +2,10 @@
 // links (for keyboards, screen readers and browsers without WebGL), a hint on how to move, the
 // Fullscreen and Enter VR buttons, while in a shared session its Together section (your name, how
 // it's going, who else is in it) and the Wave and Copy invite link buttons, the dot a gamepad aims
-// with, and short messages. Names come from other visitors: they go in as text, never as HTML.
+// with, and short messages. Its Settings hold what the control panel on the wall offers in 3D (how
+// to move and turn in VR, Start / Leave shared session) as real controls, so a keyboard or a screen
+// reader reaches them too. Names come from other visitors: they go in as text, never as HTML.
+import { readable } from './color.js';
 
 const COLLAPSED = 'hallway.doorsCollapsed';
 
@@ -47,7 +50,8 @@ export class Overlay {
     this.links = new Map();
     const list = el('ul', { class: 'doors', id: 'doors' });
     for (const env of envs) {
-      const a = el('a', { href: href(env), style: `--door:${env.color}` }, el('span', { class: 'door-title' }, env.title), el('span', { class: 'door-sub' }, env.subtitle || ''));
+      // The name in a tint of the door's glow that reads on the list (color.js); the edge in the glow itself.
+      const a = el('a', { href: href(env), style: `--door:${env.color};--door-text:${readable(env.color)}` }, el('span', { class: 'door-title' }, env.title), el('span', { class: 'door-sub' }, env.subtitle || ''));
       a.addEventListener('click', () => onLeave(env));
       this.links.set(env.id, a);
       list.append(el('li', {}, a));
@@ -76,6 +80,32 @@ export class Overlay {
       this.people,
       el('p', { class: 'together-note' }, 'Set your name here before entering VR: there is no typing in a headset.'));
     this.card.append(this.together);
+    // The control panel's choices (main.js's controls.onPanel does the rest), in the same words.
+    /** (key, value) when a movement choice is made: 'move' 'smooth' | 'teleport', 'turn' 'snap' | 'smooth'. */
+    this.onNav = () => {};
+    /** When Start / Leave shared session is pressed. */
+    this.onSession = () => {};
+    this.navInputs = {};
+    const choice = (key, legend, options) => {
+      const set = el('fieldset', { class: 'choice' }, el('legend', {}, legend));
+      for (const [value, label] of options) {
+        const input = el('input', { type: 'radio', name: `nav-${key}`, value });
+        input.addEventListener('change', () => {
+          if (input.checked) this.onNav(key, value);
+        });
+        this.navInputs[`${key}:${value}`] = input;
+        set.append(el('label', {}, input, label));
+      }
+      return set;
+    };
+    this.session = el('button', { class: 'session', type: 'button' }, 'Start shared session');
+    this.session.addEventListener('click', () => this.onSession());
+    this.settings = el('details', { class: 'settings' },
+      el('summary', {}, 'Settings'),
+      choice('move', 'Move in VR', [['teleport', 'Teleport'], ['smooth', 'Smooth']]),
+      choice('turn', 'Turn in VR', [['snap', 'Snap'], ['smooth', 'Smooth']]),
+      this.session);
+    this.card.append(this.settings);
     this.hint = el('p', { class: 'hint' });
     this.fullscreen = el('button', { class: 'pill', type: 'button', hidden: '' }, 'Fullscreen');
     this.vr = el('button', { class: 'pill vr', type: 'button', hidden: '' }, 'Enter VR');
@@ -116,6 +146,16 @@ export class Overlay {
   showVR(onClick) {
     this.vr.hidden = false;
     this.vr.addEventListener('click', onClick);
+  }
+
+  /** What the control panel shows, for the Settings: { move, turn, room } (room null when not in a session). */
+  setPanel({ move, turn, room }) {
+    for (const [id, input] of Object.entries(this.navInputs)) {
+      const checked = id === `move:${move}` || id === `turn:${turn}`;
+      if (input.checked !== checked) input.checked = checked;
+    }
+    const label = room ? 'Leave shared session' : 'Start shared session';
+    if (this.session.textContent !== label) this.session.textContent = label;
   }
 
   /** The shared session's invite link (together.js), or '' when not in one: hides the button. */

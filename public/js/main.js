@@ -70,6 +70,9 @@ renderer.setSize(innerWidth, innerHeight);
 renderer.xr.enabled = true;
 renderer.xr.setReferenceSpaceType('local-floor');
 document.getElementById('app').append(renderer.domElement);
+// For a screen reader the view is one picture; the doors list beside it is what it shows, as text.
+renderer.domElement.setAttribute('role', 'img');
+renderer.domElement.setAttribute('aria-label', 'A hallway whose doors lead to other places. Its doors are listed under Doors.');
 const anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
 setAnisotropy(anisotropy);
 
@@ -256,6 +259,7 @@ navigator.xr?.addEventListener?.('sessiongranted', takeGranted);
 // ── The control panel on the wall ────────────────────────────────────────────
 
 function showPanel() {
+  overlay.setPanel({ move: nav.move, turn: nav.turn, room: together?.room ?? null });
   hall.panel.set({
     vr: renderer.xr.isPresenting ? 'exit' : vrSupported ? 'enter' : 'none',
     move: nav.move,
@@ -288,6 +292,9 @@ controls.onPanel = (id) => {
   saveNav(nav);
   showPanel();
 };
+// The overlay's Settings press the same buttons.
+overlay.onNav = (key, value) => controls.onPanel(`${key}:${value}`);
+overlay.onSession = () => controls.onPanel('session');
 // A teleport in VR blinks: a moment of black hides the jump.
 controls.onTeleport = (move) => {
   if (leaving || !renderer.xr.isPresenting) {
