@@ -129,6 +129,8 @@ export class Overlay {
     this.dot = el('div', { class: 'aim', hidden: '', 'aria-hidden': 'true' });
     this.toasts = el('div', { class: 'toasts', role: 'status', 'aria-live': 'polite' });
     this.root.append(this.card, this.hint, this.buttons, this.dot, this.toasts);
+    // The card stops above the buttons, which wrap to two rows on a phone in a shared session (style.css).
+    new ResizeObserver(() => this.root.style.setProperty('--buttons', `${this.buttons.offsetHeight}px`)).observe(this.buttons);
     this._hover = null;
   }
 

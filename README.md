@@ -65,7 +65,8 @@ Under them, three settings every site behind the doors shares (kept under `hallw
 
 The same choices, and Start / Leave shared session, are under **Settings** in the card with the
 doors list, as ordinary controls a keyboard or a screen reader can reach. The doors list is the
-hallway as text: each door is a link, its name in a tint of its glow that reads at 4.5:1.
+hallway as text: each door is a link, its name in a tint of its glow that reads at 4.5:1. On a
+short screen, such as a phone's or one turned on its side, the card scrolls.
 
 ## Together
 

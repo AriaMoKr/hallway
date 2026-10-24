@@ -39,6 +39,12 @@ test('the page uses relative URLs only, so it works under any path (GitHub Pages
   for (const u of urls) assert.ok(!u.startsWith('/'), `root-relative URL ${u}`);
 });
 
+test('nothing in style.css takes away the focus ring, which forced colours keep and a border colour is not', () => {
+  const css = readFileSync(join(root, 'css', 'style.css'), 'utf8');
+  assert.match(css, /:focus-visible \{ outline: 2px solid/);
+  assert.doesNotMatch(css, /outline:\s*(none|0)\b/);
+});
+
 test("the link preview: its tags, and the picture they name (door-view.js's HALL_VIEW)", () => {
   const meta = (k) => html.match(new RegExp(`<meta (?:property|name)="${k}" content="([^"]*)">`))?.[1];
   const { homepage } = JSON.parse(readFileSync(join(root, '..', 'package.json'), 'utf8'));
