@@ -60,6 +60,8 @@ export class Together {
     this.onChange = () => {};
     this.onNotice = () => {};
     this.avatars = createAvatars({ parent: scene, font: SANS });
+    /** Less motion (common/access.js): a wave doesn't bob, though its toast still comes. */
+    this.reduceMotion = false;
     this._pose = emptyPose();
     this._joining = 0; // which join is current: a slow import must not join a room left since
     this._slow = false; // no relay RELAY_WAIT_MS after joining
@@ -254,7 +256,7 @@ export class Together {
     const now = performance.now();
     if (now - (this._waves.get(peer.peerId) ?? -Infinity) < WAVE_AGAIN_MS) return;
     this._waves.set(peer.peerId, now);
-    this.avatars.wave(peer.peerId, now);
+    if (!this.reduceMotion) this.avatars.wave(peer.peerId, now);
     const name = peer.name || 'Someone';
     this.onNotice(!peer.page || peer.page === HALLWAY_ID ? `${name} waved` : `${name} waved, ${inPlace(peer.page)}`);
   }

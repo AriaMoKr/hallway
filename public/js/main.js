@@ -12,7 +12,8 @@ import { Fade } from 'common/fade.js';
 import { Overlay } from './overlay.js';
 import { arrivalDoorId } from './arrival.js';
 import { doorLink } from 'common/door.js';
-import { loadNav, saveNav } from 'common/nav.js';
+import { NAV_KEY, loadNav, saveNav } from 'common/nav.js';
+import { ACCESS_KEY, Vignette, eyeLift, loadAccess, motionQuery, reduceMotion, saveAccess, watchMotion } from 'common/access.js';
 import { doorPose } from './link.js';
 import { setAnisotropy } from './textures.js';
 import { doorView, renderDoorView, renderHallView } from './door-view.js';
@@ -100,6 +101,49 @@ const controls = new Controls({ renderer, camera, rig, scene, dom: renderer.domE
 const nav = loadNav();
 controls.setNav(nav);
 const fade = new Fade(camera, 1);
+// The comfort vignette, under the fade: it closes in while the sticks walk or turn smoothly in VR.
+const vignette = new Vignette(camera);
+
+// The accessibility settings every site on the origin shares (common/access.js, hallway.access):
+// less motion, the vignette, seated. Less motion: a click on the floor jumps there, a door clicked on
+// a screen is gone through at once, the fades blink, the doorways' veils hold still, and a wave
+// doesn't bob (the toast still says who waved).
+let access = loadAccess();
+const motion = motionQuery();
+let reduce = false;
+/** A fade of `seconds`, or a blink with less motion. */
+const fadeTime = (seconds) => (reduce ? 0.08 : seconds);
+function applyAccess() {
+  reduce = reduceMotion(access, motion);
+  controls.reduceMotion = reduce;
+  controls.setLift(eyeLift(access));
+  vignette.enabled = access.vignette;
+  if (together) together.reduceMotion = reduce;
+  document.documentElement.classList.toggle('reduce-motion', reduce);
+}
+applyAccess();
+/** A setting changed, on the panel or in the overlay's Settings. */
+function setAccess(change) {
+  access = { ...access, ...change };
+  saveAccess(access);
+  applyAccess();
+  showPanel();
+}
+watchMotion(() => {
+  applyAccess();
+  showPanel();
+}, motion);
+/** The settings again, as another page on the origin left them (one still open, or this one coming back). */
+function reloadSettings() {
+  access = loadAccess();
+  applyAccess();
+  Object.assign(nav, loadNav());
+  controls.setNav(nav);
+  showPanel();
+}
+addEventListener('storage', (e) => {
+  if (e.key === ACCESS_KEY || e.key === NAV_KEY) reloadSettings();
+});
 
 // Where to start: in front of the door just come back through, else at the entrance. Arrivals
 // spread out by who they are (the shared session's member id, kept for the tab before any session
@@ -140,7 +184,7 @@ function go(door) {
   // Leave the shared session now, so the others see the visitor go at once (the link carries its
   // room on); the fade gives the leaving message time to go out.
   together.pause();
-  fade.to(1, xr ? 0.3 : 0.4, () => location.assign(url));
+  fade.to(1, fadeTime(xr ? 0.3 : 0.4), () => location.assign(url));
   // Still here a while later (the navigation was stopped or failed): come back.
   clearTimeout(leaveTimer);
   leaveTimer = setTimeout(() => arrive(door), 12000);
@@ -155,11 +199,12 @@ function arrive(door) {
     controls.setPose(p.x, p.z, p.yaw);
   }
   together.resume();
-  fade.to(0, 0.6);
+  fade.to(0, fadeTime(0.6));
 }
 
 window.addEventListener('pageshow', (e) => {
   if (!e.persisted) return;
+  reloadSettings();
   const id = lastDoor();
   arrive(L.doors.find((d) => d.env && d.env.id === id) || leaving);
 });
@@ -171,7 +216,7 @@ controls.onSelect = (door, how) => {
     overlay.toast('That door is not open yet.');
     return;
   }
-  if (how === 'xr') go(door);
+  if (how === 'xr' || reduce) go(door);
   else controls.walkInto(door);
 };
 let active = false;
@@ -259,11 +304,15 @@ navigator.xr?.addEventListener?.('sessiongranted', takeGranted);
 // ── The control panel on the wall ────────────────────────────────────────────
 
 function showPanel() {
-  overlay.setPanel({ move: nav.move, turn: nav.turn, room: together?.room ?? null });
+  const room = together?.room ?? null;
+  overlay.setPanel({ move: nav.move, turn: nav.turn, motion: access.motion, vignette: access.vignette, seated: access.seated, room });
   hall.panel.set({
     vr: renderer.xr.isPresenting ? 'exit' : vrSupported ? 'enter' : 'none',
     move: nav.move,
     turn: nav.turn,
+    motion: access.motion,
+    vignette: access.vignette ? 'on' : 'off',
+    seated: access.seated ? 'on' : 'off',
     room: together?.room ?? null,
     link: together?.inviteLink.replace(/^https?:\/\//, '') ?? '',
     status: together?.room ? together.status : '',
@@ -287,6 +336,8 @@ controls.onPanel = (id) => {
     return;
   }
   const [key, value] = id.split(':');
+  if (key === 'motion') return setAccess({ motion: value });
+  if (key === 'vignette' || key === 'seated') return setAccess({ [key]: value === 'on' });
   nav[key] = value;
   controls.setNav(nav);
   saveNav(nav);
@@ -295,6 +346,7 @@ controls.onPanel = (id) => {
 // The overlay's Settings press the same buttons.
 overlay.onNav = (key, value) => controls.onPanel(`${key}:${value}`);
 overlay.onSession = () => controls.onPanel('session');
+overlay.onAccess = setAccess;
 // A teleport in VR blinks: a moment of black hides the jump.
 controls.onTeleport = (move) => {
   if (leaving || !renderer.xr.isPresenting) {
@@ -310,6 +362,7 @@ controls.onTeleport = (move) => {
 // ── The shared session ───────────────────────────────────────────────────────
 
 together = new Together({ scene, camera, renderer, hands: () => controls.hands });
+together.reduceMotion = reduce;
 together.onChange = () => {
   showPanel();
   overlay.setInvite(together.active ? together.inviteLink : '');
@@ -336,8 +389,9 @@ let last = performance.now();
 let time = 0;
 
 function step(dt) {
-  time += dt;
+  if (!reduce) time += dt; // the doorways' veils drift with it, and hold still with less motion
   controls.update(dt);
+  vignette.update(dt, controls.xrSpeed, controls.xrTurnRate, renderer.xr.isPresenting);
   camera.getWorldPosition(head);
   hall.update(time, dt, head, controls.hoverDoor);
   together.update(performance.now());
@@ -364,11 +418,14 @@ addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight);
 });
 
-fade.to(0, 0.8);
+fade.to(0, fadeTime(0.8));
 
 // For scripted testing. A hidden page gets no animation frames: drive it with tick().
 window.__hallway = {
-  THREE, renderer, scene, camera, rig, hall, layout: L, controls, overlay, fade, xrDevice, go, enterVR, together,
+  THREE, renderer, scene, camera, rig, hall, layout: L, controls, overlay, fade, vignette, xrDevice, go, enterVR, together,
+  get access() {
+    return { ...access, reduce };
+  },
   /**
    * The view out of every open door (door-view.js), once the doorways' pictures have loaded:
    * [{ id, jpeg (a data: URL), params }], for tools/door-views.mjs.
@@ -377,14 +434,14 @@ window.__hallway = {
     await hall.previewsLoaded;
     return L.doors.filter((d) => d.env).map((d) => ({
       id: d.env.id,
-      jpeg: renderDoorView(renderer, scene, hall, d, { hide: [fade.mesh] }).toDataURL('image/jpeg', quality),
+      jpeg: renderDoorView(renderer, scene, hall, d, { hide: [fade.mesh, vignette.mesh] }).toDataURL('image/jpeg', quality),
       params: doorView(L, d).params,
     }));
   },
   /** The link preview's picture (door-view.js's HALL_VIEW), once the doorways' pictures have loaded: a data: URL. */
   async hallView(quality = 0.88) {
     await hall.previewsLoaded;
-    return renderHallView(renderer, scene, hall, { hide: [fade.mesh] }).toDataURL('image/jpeg', quality);
+    return renderHallView(renderer, scene, hall, { hide: [fade.mesh, vignette.mesh] }).toDataURL('image/jpeg', quality);
   },
   tick(dt = 1 / 60, n = 1) {
     for (let i = 0; i < n; i++) step(dt);

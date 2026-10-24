@@ -52,6 +52,17 @@ The trigger (or a pinch) at the floor teleports in either mode, and every telepo
 view black for a moment. The choices are kept in this browser, for the hallway and the places
 behind its doors.
 
+Under them, three settings every site behind the doors shares (kept under `hallway.access`):
+
+- **Motion: System** (the default) follows the device's own reduce-motion setting; **Less** and
+  **Full** override it. With less motion, clicking the floor or a door puts you there at once
+  instead of walking, the fades are blinks, the doorways' veils hold still, and someone waving
+  doesn't bob (the message still says they waved).
+- **Vignette: On** (the default): in VR, while the sticks walk or turn you smoothly, the edge of
+  the view darkens and closes in, and opens again when you stop. It eases the motion sickness
+  smooth movement gives some people.
+- **Seated: On** raises the view 0.45 m in VR, so you see from about standing height sitting down.
+
 The same choices, and Start / Leave shared session, are under **Settings** in the card with the
 doors list, as ordinary controls a keyboard or a screen reader can reach. The doors list is the
 hallway as text: each door is a link, its name in a tint of its glow that reads at 4.5:1.

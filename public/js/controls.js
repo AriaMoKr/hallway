@@ -50,6 +50,13 @@ export class Controls {
     /** VR navigation (common/nav.js): move 'smooth' | 'teleport', turn 'snap' | 'smooth'. */
     this.move = 'smooth';
     this.turn = 'snap';
+    /** Less motion (common/access.js reduceMotion): a click or tap on the floor jumps there. */
+    this.reduceMotion = false;
+    /** How far the rig is raised in VR (common/access.js eyeLift: seated). */
+    this.lift = 0;
+    /** In VR, this frame: the left stick's smooth walking (m/s) and the right stick's smooth turning (rad/s), for the vignette. */
+    this.xrSpeed = 0;
+    this.xrTurnRate = 0;
     /** (door, how) when a door is chosen: how is 'screen' or 'xr'. */
     this.onSelect = () => {};
     /** (button id) when a button of the control panel is pressed. */
@@ -94,7 +101,7 @@ export class Controls {
 
   /** Puts the viewer at (x, z) facing yaw. */
   setPose(x, z, yaw) {
-    this.rig.position.set(x, 0, z);
+    this.rig.position.set(x, this.renderer.xr.isPresenting ? this.lift : 0, z);
     this.yaw = yaw;
     this.pitch = 0;
     this.auto = null;
@@ -108,8 +115,19 @@ export class Controls {
     for (const h of this.hands) h.aiming = false;
   }
 
-  /** Walks to a point on the floor. */
+  /** Raises the rig by lift in VR (seated); on a screen the eye height stays. */
+  setLift(lift) {
+    this.lift = lift;
+    if (this.renderer.xr.isPresenting) this.rig.position.y = lift;
+  }
+
+  /** Walks to a point on the floor; with less motion, it is there at once. */
   walkTo(x, z) {
+    if (this.reduceMotion) {
+      this.auto = null;
+      this._move(x, z);
+      return;
+    }
     this._startWalk([[x, z]], null);
   }
 
@@ -389,6 +407,7 @@ export class Controls {
       this._recenter = 2;
       this.auto = null;
       this.keys.clear();
+      this.rig.position.y = this.lift;
     });
     this.renderer.xr.addEventListener('sessionend', () => this._onSessionEnd());
   }
@@ -419,6 +438,8 @@ export class Controls {
   }
 
   _updateXR(dt) {
+    this.xrSpeed = 0;
+    this.xrTurnRate = 0;
     // A moment after entering, line the headset up with where the viewer stood and looked.
     if (this._recenter > 0 && --this._recenter === 0) {
       this._turnAboutHead(wrapAngle(this._entry.yaw - this._headYaw()));
@@ -475,7 +496,10 @@ export class Controls {
   /** Right stick: a 30 degree step each push (snap), or turning while held (smooth). */
   _turnStick(ax, dt) {
     if (this.turn === 'smooth') {
-      if (Math.abs(ax) > 0.15) this._turnAboutHead(-ax * SMOOTH_TURN * dt);
+      if (Math.abs(ax) > 0.15) {
+        this._turnAboutHead(-ax * SMOOTH_TURN * dt);
+        this.xrTurnRate = Math.abs(ax) * SMOOTH_TURN;
+      }
       return;
     }
     if (this._snapArmed && Math.abs(ax) > 0.6) {
@@ -494,6 +518,7 @@ export class Controls {
     fz /= fl;
     // Right of forward (fx, fz) is (-fz, fx).
     const step = XR_WALK * dt;
+    this.xrSpeed = XR_WALK * Math.min(1, Math.hypot(ax, ay));
     this.camera.getWorldPosition(this._head);
     this._moveHead(this._head.x + (-fz * ax - fx * ay) * step, this._head.z + (fx * ax - fz * ay) * step);
   }

@@ -1,5 +1,6 @@
-// The control panel on the wall (layout.js PANEL): Enter / Exit VR, how to move and turn in VR, and
-// the shared session (together.js): Start / Leave, how it's going, its invite link to read out, and
+// The control panel on the wall (layout.js PANEL): Enter / Exit VR, how to move and turn in VR, the
+// accessibility settings every site shares (common/access.js: motion, the comfort vignette, seated),
+// and the shared session (together.js): Start / Leave, how it's going, its invite link to read out, and
 // who else is in it and where (up to four, then "+N more"). Its canvas is redrawn only when what it
 // shows changes (a setting, a session, the button pointed at, someone coming, going or renaming),
 // never per frame: the people come as a string (presence.js), and round trips stay off it.
@@ -7,14 +8,20 @@ import * as THREE from 'three';
 import { PANEL, PANEL_PX, PANEL_BUTTONS } from './layout.js';
 import { GOLD, SANS, SERIF, enamel } from './textures.js';
 
-const LABELS = { 'move:teleport': 'Teleport', 'move:smooth': 'Smooth', 'turn:snap': 'Snap', 'turn:smooth': 'Smooth' };
+const LABELS = {
+  'move:teleport': 'Teleport', 'move:smooth': 'Smooth', 'turn:snap': 'Snap', 'turn:smooth': 'Smooth',
+  'motion:system': 'System', 'motion:reduce': 'Less', 'motion:full': 'Full',
+  'vignette:on': 'On', 'vignette:off': 'Off', 'seated:on': 'On', 'seated:off': 'Off',
+};
+/** The rows' names, at their middles on the canvas. */
+const ROWS = [['Move', 157], ['Turn', 219], ['Motion', 315], ['Vignette', 377], ['Seated', 439]];
 const VR_LABELS = { exit: 'Exit VR', enter: 'Enter VR', none: 'No VR in this browser' };
 const HINTS = {
   teleport: 'Left stick forward, aim, let go: teleport',
   smooth: 'Left stick: walk · trigger at the floor: teleport',
 };
 const SESSION_LABELS = { on: 'Leave shared session', off: 'Start shared session' };
-const KEYS = ['vr', 'move', 'turn', 'room', 'link', 'status', 'people'];
+const KEYS = ['vr', 'move', 'turn', 'motion', 'vignette', 'seated', 'room', 'link', 'status', 'people'];
 
 export class ControlPanel {
   /** @param {{ halfWidth: number, color: THREE.Color, anisotropy?: number }} o */
@@ -30,14 +37,15 @@ export class ControlPanel {
     this.mesh.name = 'control panel';
     this.mesh.position.set(PANEL.side * (halfWidth - PANEL.depth), PANEL.y, PANEL.z);
     this.mesh.rotation.y = -PANEL.side * Math.PI / 2;
-    this.state = { vr: 'none', move: 'smooth', turn: 'snap', room: null, link: '', status: '', people: '' };
+    this.state = { vr: 'none', move: 'smooth', turn: 'snap', motion: 'system', vignette: 'on', seated: 'off', room: null, link: '', status: '', people: '' };
     this.hover = null;
     this._draw();
   }
 
   /**
    * What it shows, all or part of it: vr is 'exit' (in VR), 'enter' (VR available) or 'none'; move
-   * and turn as in common/nav.js; room is the shared session's (null when not in one), link its
+   * and turn as in common/nav.js; motion as in common/access.js, vignette and seated 'on' or 'off';
+   * room is the shared session's (null when not in one), link its
    * invite link, status how it's going, people who else is in it (presence.js peopleText).
    */
   set(state) {
@@ -61,12 +69,11 @@ export class ControlPanel {
     g.textBaseline = 'alphabetic';
     g.fillStyle = GOLD;
     g.font = `600 30px ${SERIF}`;
-    g.fillText('Controls', 32, 58);
+    g.fillText('Controls', 32, 50);
     g.fillStyle = '#b9a98d';
     g.font = `24px ${SANS}`;
     g.textBaseline = 'middle';
-    g.fillText('Move', 34, 189);
-    g.fillText('Turn', 34, 265);
+    for (const [name, y] of ROWS) g.fillText(name, 34, y);
     for (const [id, x0, y0, x1, y1] of PANEL_BUTTONS) {
       let label, selected = false, disabled = false;
       if (id === 'vr') {
@@ -88,38 +95,38 @@ export class ControlPanel {
       g.strokeStyle = disabled ? 'rgba(224,187,114,0.3)' : GOLD;
       g.stroke();
       g.fillStyle = selected ? '#1a1208' : disabled ? 'rgba(239,229,207,0.45)' : '#efe5cf';
-      g.font = `600 ${id === 'vr' && disabled ? 22 : 26}px ${SANS}`;
+      g.font = `600 ${(id === 'vr' && disabled) || id.startsWith('motion:') ? 22 : 26}px ${SANS}`;
       g.textAlign = 'center';
       g.fillText(label, (x0 + x1) / 2, (y0 + y1) / 2 + 1);
     }
     g.fillStyle = '#b9a98d';
     g.font = `18px ${SANS}`;
     g.textAlign = 'center';
-    g.fillText(HINTS[this.state.move], W / 2, 330);
+    g.fillText(HINTS[this.state.move], W / 2, 268);
 
     // The shared session.
     g.fillStyle = 'rgba(224,187,114,0.35)';
-    g.fillRect(32, 354, W - 64, 2);
+    g.fillRect(32, 486, W - 64, 2);
     g.textAlign = 'left';
     g.fillStyle = GOLD;
     g.font = `600 26px ${SERIF}`;
-    g.fillText('Together', 32, 384);
+    g.fillText('Together', 32, 514);
     if (this.state.room) {
       g.textAlign = 'right';
       g.fillStyle = '#efe5cf';
       fitText(g, this.state.status, W - 210, 20);
-      g.fillText(this.state.status, W - 32, 385);
+      g.fillText(this.state.status, W - 32, 515);
     }
     g.textAlign = 'center';
     g.fillStyle = '#b9a98d';
     const note = this.state.room ? this.state.link : 'Start one, share its link, and see each other here';
     fitText(g, note, W - 64, 18);
-    g.fillText(note, W / 2, 486);
+    g.fillText(note, W / 2, 612);
 
     // Who else is in it, and where.
     const rows = this.state.room && this.state.people ? this.state.people.split('\n') : [];
     rows.forEach((row, i) => {
-      const y = 518 + i * 25;
+      const y = 642 + i * 25;
       const [name, place] = row.split('\t');
       if (place === undefined) {
         g.textAlign = 'left';

@@ -3,8 +3,8 @@
 // Fullscreen and Enter VR buttons, while in a shared session its Together section (your name, how
 // it's going, who else is in it) and the Wave and Copy invite link buttons, the dot a gamepad aims
 // with, and short messages. Its Settings hold what the control panel on the wall offers in 3D (how
-// to move and turn in VR, Start / Leave shared session) as real controls, so a keyboard or a screen
-// reader reaches them too. Names come from other visitors: they go in as text, never as HTML.
+// to move and turn in VR, the accessibility settings: motion, the vignette, seated; Start / Leave
+// shared session) as real controls, so a keyboard or a screen reader reaches them too. Names come from other visitors: they go in as text, never as HTML.
 import { readable } from './color.js';
 
 const COLLAPSED = 'hallway.doorsCollapsed';
@@ -85,18 +85,26 @@ export class Overlay {
     this.onNav = () => {};
     /** When Start / Leave shared session is pressed. */
     this.onSession = () => {};
+    /** (change) when an accessibility setting changes: { motion }, { vignette } or { seated } (common/access.js). */
+    this.onAccess = () => {};
     this.navInputs = {};
-    const choice = (key, legend, options) => {
+    const choice = (key, legend, options, onChoose = (value) => this.onNav(key, value)) => {
       const set = el('fieldset', { class: 'choice' }, el('legend', {}, legend));
       for (const [value, label] of options) {
         const input = el('input', { type: 'radio', name: `nav-${key}`, value });
         input.addEventListener('change', () => {
-          if (input.checked) this.onNav(key, value);
+          if (input.checked) onChoose(value);
         });
         this.navInputs[`${key}:${value}`] = input;
         set.append(el('label', {}, input, label));
       }
       return set;
+    };
+    const check = (key, label) => {
+      const input = el('input', { type: 'checkbox' });
+      input.addEventListener('change', () => this.onAccess({ [key]: input.checked }));
+      this.navInputs[key] = input;
+      return el('label', { class: 'check' }, input, label);
     };
     this.session = el('button', { class: 'session', type: 'button' }, 'Start shared session');
     this.session.addEventListener('click', () => this.onSession());
@@ -104,6 +112,9 @@ export class Overlay {
       el('summary', {}, 'Settings'),
       choice('move', 'Move in VR', [['teleport', 'Teleport'], ['smooth', 'Smooth']]),
       choice('turn', 'Turn in VR', [['snap', 'Snap'], ['smooth', 'Smooth']]),
+      choice('motion', 'Motion', [['system', 'As the system'], ['reduce', 'Less'], ['full', 'Full']], (motion) => this.onAccess({ motion })),
+      check('vignette', 'Darken the edges when moving smoothly in VR'),
+      check('seated', 'Seated: raise the view in VR'),
       this.session);
     this.card.append(this.settings);
     this.hint = el('p', { class: 'hint' });
@@ -148,10 +159,13 @@ export class Overlay {
     this.vr.addEventListener('click', onClick);
   }
 
-  /** What the control panel shows, for the Settings: { move, turn, room } (room null when not in a session). */
-  setPanel({ move, turn, room }) {
+  /**
+   * What the control panel shows, for the Settings: { move, turn, motion, vignette, seated, room }
+   * (vignette and seated true or false; room null when not in a session).
+   */
+  setPanel({ move, turn, motion, vignette, seated, room }) {
     for (const [id, input] of Object.entries(this.navInputs)) {
-      const checked = id === `move:${move}` || id === `turn:${turn}`;
+      const checked = id === 'vignette' ? vignette : id === 'seated' ? seated : id === `move:${move}` || id === `turn:${turn}` || id === `motion:${motion}`;
       if (input.checked !== checked) input.checked = checked;
     }
     const label = room ? 'Leave shared session' : 'Start shared session';

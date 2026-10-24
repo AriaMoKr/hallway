@@ -27,21 +27,29 @@ export const PLAQUE = { offset: HALL.doorWidth / 2 + 0.46, width: 0.6 };
 
 /**
  * The control panel on the right wall near the entrance, between it and the first door's plaque:
- * Enter / Exit VR, how to move in VR, and the shared session (together.js): its status and who is
- * in it. y and z are its centre, high enough that its frame clears the chair rail at 1 m; depth
- * how far its face stands out from the wall.
+ * Enter / Exit VR, how to move in VR, the accessibility settings (common/access.js: motion, the
+ * vignette, seated), and the shared session (together.js): its status and who is in it. y and z
+ * are its centre, high enough that its frame clears the chair rail at 1 m and low enough that its
+ * top is in reach; depth how far its face stands out from the wall.
  */
-export const PANEL = { side: 1, z: -2.2, y: 1.45, width: 0.56, height: 0.7, depth: 0.03 };
+export const PANEL = { side: 1, z: -2.2, y: 1.51, width: 0.56, height: (0.56 * 784) / 512, depth: 0.03 };
 
 /** The panel's canvas (its shape), and its buttons on it as [id, x0, y0, x1, y1] in canvas pixels (y down). */
-export const PANEL_PX = { width: 512, height: 640 };
+export const PANEL_PX = { width: 512, height: 784 };
 export const PANEL_BUTTONS = [
-  ['vr', 32, 74, 480, 136],
-  ['move:teleport', 160, 160, 314, 218],
-  ['move:smooth', 326, 160, 480, 218],
-  ['turn:snap', 160, 236, 314, 294],
-  ['turn:smooth', 326, 236, 480, 294],
-  ['session', 32, 404, 480, 458],
+  ['vr', 32, 66, 480, 118],
+  ['move:teleport', 160, 132, 314, 182],
+  ['move:smooth', 326, 132, 480, 182],
+  ['turn:snap', 160, 194, 314, 244],
+  ['turn:smooth', 326, 194, 480, 244],
+  ['motion:system', 160, 290, 260, 340],
+  ['motion:reduce', 270, 290, 370, 340],
+  ['motion:full', 380, 290, 480, 340],
+  ['vignette:on', 160, 352, 314, 402],
+  ['vignette:off', 326, 352, 480, 402],
+  ['seated:on', 160, 414, 314, 464],
+  ['seated:off', 326, 414, 480, 464],
+  ['session', 32, 532, 480, 584],
 ];
 
 /** The button at (u, v) on the panel (0…1 from its bottom left, as castRay reports), or null. */

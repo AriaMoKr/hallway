@@ -76,6 +76,10 @@ a { color: var(--accent); }
 .settings legend { float: left; width: 6.5em; padding: 0; color: var(--muted); }
 .settings label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
 .settings input { margin: 0; accent-color: var(--accent); }
+.settings .check { display: flex; margin-top: 8px; }
+
+/* Less motion (common/access.js, the setting or the system's): nothing on the page glides either. */
+.reduce-motion *, .reduce-motion *::before, .reduce-motion *::after { transition: none !important; animation: none !important; }
 .session {
   margin-top: 10px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--accent);
   background: transparent; color: var(--accent); font-weight: 600;

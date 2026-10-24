@@ -160,3 +160,18 @@ test('coming back out of a door spreads too: within 0.4 m of its centre, facing 
     assert.ok(apart(list) >= 0.39, `spots ${apart(list)} m apart`);
   }
 });
+
+test("the panel's choices are the values common keeps: every movement choice and accessibility setting", async () => {
+  const { normalizeNav } = await import('common/nav.js');
+  const { normalizeAccess } = await import('common/access.js');
+  const ids = PANEL_BUTTONS.map(([id]) => id).filter((id) => id.includes(':'));
+  for (const id of ids) {
+    const [key, value] = id.split(':');
+    if (key === 'move' || key === 'turn') assert.equal(normalizeNav({ [key]: value })[key], value, id);
+    else if (key === 'motion') assert.equal(normalizeAccess({ motion: value }).motion, value, id);
+    else assert.equal(normalizeAccess({ [key]: value === 'on' })[key], value === 'on', id);
+  }
+  for (const want of ['move:smooth', 'move:teleport', 'turn:snap', 'turn:smooth', 'motion:system', 'motion:reduce', 'motion:full', 'vignette:on', 'vignette:off', 'seated:on', 'seated:off']) {
+    assert.ok(ids.includes(want), `no ${want} button`);
+  }
+});
