@@ -10,7 +10,11 @@ whose conventions this project follows), Breadboard 8-bit's VR view
 (https://ariamokr.github.io/breadboard/vr.html), music (https://ariamokr.github.io/music/,
 AriaMoKr/music: a music room built from vrlbry, where Gutenberg's books on music play their scores) and Outside (https://ariamokr.github.io/outside/,
 AriaMoKr/outside: a small garden built for the door link, whose `HALLWAY_DOOR` in
-`public/js/way.js` is its entry here; keep them in step). All four take the VR hand-over.
+`public/js/way.js` is its entry here; keep them in step), and two rooms made from
+AriaMoKr/RoomTemplateEmpty and still empty, art (https://ariamokr.github.io/art/, AriaMoKr/art,
+soon a gallery) and video (https://ariamokr.github.io/video/, AriaMoKr/video, soon a room to watch
+videos in), each with its entry here as its `public/js/config.js`'s `hallwayDoor()`. All six take
+the VR hand-over.
 `public/` is the whole site. `README.md` covers
 using it, adding a door, and rendering the door views the site publishes. The door contract (what
 a door's link tells the environment, how environments link back, the door views) is AriaMoKr/common's

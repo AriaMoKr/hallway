@@ -56,4 +56,24 @@ export const ENVIRONMENTS = [
     preview: 'https://ariamokr.github.io/outside/hallway-preview.jpg',
     color: '#9fd07a',
   },
+  {
+    // Made from AriaMoKr/RoomTemplateEmpty: its public/js/config.js's hallwayDoor() is this entry.
+    id: 'art',
+    title: 'art',
+    subtitle: "An empty room behind the Hallway's door, soon a gallery of art.",
+    sign: 'Art Room',
+    url: 'https://ariamokr.github.io/art/',
+    preview: 'https://ariamokr.github.io/art/hallway-preview.jpg',
+    color: '#e08fb0',
+  },
+  {
+    // As art's: from RoomTemplateEmpty, its config.js's hallwayDoor().
+    id: 'video',
+    title: 'video',
+    subtitle: "An empty room behind the Hallway's door, soon a room to watch videos in. Walk it in VR on a Meta Quest, on a desktop or on a phone.",
+    sign: 'Screening Room',
+    url: 'https://ariamokr.github.io/video/',
+    preview: 'https://ariamokr.github.io/video/hallway-preview.jpg',
+    color: '#6cb8e0',
+  },
 ];

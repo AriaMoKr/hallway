@@ -6,10 +6,11 @@ A WebXR corridor whose doors lead to other environments:
 [vrlbry](https://ariamokr.github.io/vrlbry/), a candle-lit virtual library;
 [Breadboard 8-bit](https://ariamokr.github.io/breadboard/vr.html), Ben Eater's 8-bit breadboard
 computer in 3D, run live by its simulator; [music](https://ariamokr.github.io/music/), a music
-room where Project Gutenberg's books on music play their scores; and
+room where Project Gutenberg's books on music play their scores;
 [Outside](https://ariamokr.github.io/outside/), a small garden with a stream, a pond and a bench to
-read on. Walk the hallway in VR on a Meta Quest, on a desktop or on a phone. There is nothing to
-install.
+read on; and two rooms still empty, [art](https://ariamokr.github.io/art/), soon a gallery of art,
+and [video](https://ariamokr.github.io/video/), soon a room to watch videos in. Walk the hallway in
+VR on a Meta Quest, on a desktop or on a phone. There is nothing to install.
 
 ![The hallway: a library's bookcases through an open door under a Library sign, and more doors and signs down a chequered floor to a window onto fields in the afternoon](public/social.jpg)
 

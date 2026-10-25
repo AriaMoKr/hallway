@@ -32,6 +32,22 @@
    "eye": 1.6,
    "horizon": 0.6154,
    "aspect": 2
+  },
+  "art": {
+   "image": "art.jpg",
+   "depth": 2.94,
+   "pictureHeight": 6.5,
+   "eye": 1.6,
+   "horizon": 0.6154,
+   "aspect": 2
+  },
+  "video": {
+   "image": "video.jpg",
+   "depth": 2.94,
+   "pictureHeight": 6.5,
+   "eye": 1.6,
+   "horizon": 0.6154,
+   "aspect": 2
   }
  }
 }
