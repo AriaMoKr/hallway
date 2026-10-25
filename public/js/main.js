@@ -17,7 +17,7 @@ import { ACCESS_KEY, Vignette, eyeLift, loadAccess, motionQuery, reduceMotion, s
 import { doorPose } from './link.js';
 import { setAnisotropy } from './textures.js';
 import { doorView, renderDoorView, renderHallView } from './door-view.js';
-import { Together } from './together.js';
+import { hallwayTogether, noticeToast, panelPeople, sessionPeople, sessionStatus } from './together.js';
 import { hash, loadIdentity } from 'layersharedsession/identity.js';
 import { roomFromUrl } from 'layersharedsession/room.js';
 
@@ -315,8 +315,8 @@ function showPanel() {
     seated: access.seated ? 'on' : 'off',
     room: together?.room ?? null,
     link: together?.inviteLink.replace(/^https?:\/\//, '') ?? '',
-    status: together?.room ? together.status : '',
-    people: together?.active ? together.panelPeople() : '',
+    status: together?.room ? sessionStatus(together) : '',
+    people: together?.active ? panelPeople(together) : '',
   });
 }
 showPanel();
@@ -361,15 +361,15 @@ controls.onTeleport = (move) => {
 
 // ── The shared session ───────────────────────────────────────────────────────
 
-together = new Together({ scene, camera, renderer, hands: () => controls.hands });
+together = hallwayTogether({ scene, camera, renderer, hands: () => controls.hands });
 together.reduceMotion = reduce;
-together.onChange = () => {
+together.on('change', () => {
   showPanel();
   overlay.setInvite(together.active ? together.inviteLink : '');
-  overlay.setTogether(together.active ? { active: true, self: together.self, status: together.status, people: together.people() } : { active: false });
+  overlay.setTogether(together.active ? { active: true, self: together.self, status: sessionStatus(together), people: sessionPeople(together) } : { active: false });
   overlay.refreshLinks();
-};
-together.onNotice = (text) => overlay.toast(text, 4);
+});
+together.on('notice', (notice) => overlay.toast(noticeToast(notice), 4));
 overlay.onName = (name) => together.setName(name);
 // A wave: the Wave button, or a controller's grip in VR (which pulses, so the waver feels it go).
 overlay.onWave = () => {

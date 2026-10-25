@@ -121,7 +121,9 @@ npm test
 It needs Node 22 or later: the tools that drive a Quest use its built-in WebSocket.
 
 `public/` is the whole site: any static server can serve it once `npm install` has filled
-`public/vendor/`. WebXR needs a secure context. `http://localhost` counts as one.
+`public/vendor/` with what [`vendor.json`](vendor.json) lists (common's vendor copy, run as the
+postinstall). WebXR needs a secure context. `http://localhost` counts as one. `npm start` is
+common's dev server on the hallway's port, 8088 (`tools/serve.mjs`).
 
 A Quest connected over adb can open the dev server as `http://localhost:8088/` after
 `adb reverse tcp:8088 tcp:8088`, as long as the server listens on IPv4. `npm start` listens on
@@ -205,16 +207,27 @@ node tools/door-views.mjs --port 8089
 ```
 
 The tool opens the hallway in Quest Browser and reloads it there before rendering, since a tab
-left open from an earlier run still shows the hall as it was then. With a desktop browser instead,
-start it with `--remote-debugging-port`, open the dev server in it, and pass `--cdp <its address>`.
-The tool writes `public/views/<id>.jpg` and `views.json`, to be committed with the change. It also
-renders the picture a shared link to the hallway shows (see "Publishing"), `public/social.jpg`.
+left open from an earlier run still shows the hall as it was then. Without a headset, `--chrome`
+renders in a headless Chrome of its own on this computer, from the dev server (`npm start`):
+
+```bash
+node tools/door-views.mjs --chrome
+```
+
+It starts Chrome through common's `launchChrome`, on a new profile whose `Local State` is written
+first, so on Windows Chrome doesn't test the account's password with a failed logon. Headless
+Chrome draws the views as a Chrome window does, pixel for pixel; but the signs and plaques are in
+this computer's fonts, not the Quest's, so the views committed so far are the Quest's. The tool
+writes `public/views/<id>.jpg` and `views.json`, to be committed with the change. It also renders
+the picture a shared link to the hallway shows (see "Publishing"), `public/social.jpg`.
 
 ## Publishing
 
 `.github/workflows/pages.yml` publishes `public/` to GitHub Pages
 (https://ariamokr.github.io/hallway/, from [AriaMoKr/hallway](https://github.com/AriaMoKr/hallway))
-on every push to `main`. In the repository's Settings → Pages, the source must be "GitHub
+on every push to `main`, through common's workflow
+([The Pages workflow](https://github.com/AriaMoKr/common#the-pages-workflow)): `npm ci` and
+`npm test` on Node 24, then `public/` as it is. Its tag moves with common's in package.json. In the repository's Settings → Pages, the source must be "GitHub
 Actions". Every URL in the page is relative, so the hallway would also work at another path or at
 the account's own root.
 

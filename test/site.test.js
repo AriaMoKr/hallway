@@ -7,6 +7,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ENVIRONMENTS } from '../public/js/environments.js';
 import { LINK_PARAMS } from 'common/door.js';
+import { readList } from 'common/tools/vendor.mjs';
 import { HALL_VIEW } from '../public/js/door-view.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', 'public');
@@ -73,11 +74,18 @@ test('client modules import only three, the shared packages and each other', () 
     const src = readFileSync(join(root, 'js', f), 'utf8');
     for (const m of src.matchAll(/(?:^import\s.*?from\s+|import\()'([^']+)'/gms)) {
       assert.ok(m[1] === 'three' || layer.test(m[1]) || common.test(m[1]) || m[1].startsWith('./'), `${f} imports ${m[1]}`);
-      // The layer's modules are the ones tools/vendor.mjs copies from the package.
+      // The layer's modules are the ones the vendor copy (vendor.json) takes from the package.
       if (layer.test(m[1])) assert.ok(existsSync(join(packageDir('layersharedsession'), 'public', 'js', m[1].split('/')[1])), `${f}: no ${m[1]} in the package (npm install?)`);
       if (common.test(m[1])) assert.ok(existsSync(join(packageDir('common'), 'src', m[1].split('/')[1])), `${f}: no ${m[1]} in the package (npm install?)`);
     }
   }
+});
+
+test("vendor.json is a list common's vendor copy takes, with every folder the import map maps", () => {
+  const list = readList(join(root, '..'));
+  const to = new Set(list.map((e) => e.to.split('/')[0]));
+  for (const dir of ['three', 'common', 'layersharedsession', 'trystero-core', 'trystero-nostr', 'noble-secp256k1']) assert.ok(to.has(dir), dir);
+  assert.ok(list.every((e) => !(e.dir || e.from).startsWith('common/tools')), 'common/tools never goes to a page');
 });
 
 test('the import map maps everything the shared session loads to its copy in vendor/', () => {

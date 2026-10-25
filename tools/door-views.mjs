@@ -11,6 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs, promisify } from 'node:util';
+import { launchChrome } from 'common/tools/chrome.mjs';
 import { devtoolsSockets } from './quest-check.mjs';
 
 const execFileP = promisify(execFile);
@@ -25,8 +26,9 @@ and writes <id>.jpg and views.json to public/views/, and the link preview's pict
 near the entrance) to public/social.jpg.
 
 Options:
-  --cdp <url>      a desktop browser's DevTools endpoint (one started with --remote-debugging-port,
-                   http://localhost:${PORT}/ open in it); without it, a Meta Quest over adb
+  --chrome         render in a Chrome of its own on this computer, headless (common's launchChrome,
+                   on a new profile it removes after); without it, a Meta Quest over adb. The
+                   signs and plaques are in this computer's fonts, not the Quest's
   --port <n>       the dev server's port (default ${PORT}; node tools/serve.mjs --port <n>)
   --serial <id>    adb device serial, when several devices are connected
   --out <dir>      where to write the views (default public/views)
@@ -106,7 +108,7 @@ async function findPage(endpoint, port, ms) {
 async function main() {
   const { values: opts } = parseArgs({
     options: {
-      cdp: { type: 'string' }, port: { type: 'string', default: String(PORT) }, serial: { type: 'string' },
+      chrome: { type: 'boolean' }, port: { type: 'string', default: String(PORT) }, serial: { type: 'string' },
       out: { type: 'string', default: path.join(ROOT, 'public', 'views') }, social: { type: 'string', default: path.join(ROOT, 'public', 'social.jpg') },
       help: { type: 'boolean', short: 'h' },
     },
@@ -114,10 +116,15 @@ async function main() {
   if (opts.help) return console.log(HELP);
   const adb = (...args) => execFileP('adb', opts.serial ? ['-s', opts.serial, ...args] : args, { windowsHide: true }).then((r) => r.stdout);
   const port = Number(opts.port);
-  let endpoint = opts.cdp?.replace(/\/$/, '');
+  let endpoint = null;
   let forward = null;
+  let chrome = null;
   try {
-    if (!endpoint) {
+    if (opts.chrome) {
+      // Headless: a window (headless: false), drawn by the GPU, gave the same pictures, pixel for pixel.
+      chrome = await launchChrome({ url: `http://localhost:${port}/` });
+      endpoint = chrome.endpoint;
+    } else {
       await adb('reverse', `tcp:${port}`, `tcp:${port}`);
       await adb('shell', 'am', 'start', '-a', 'android.intent.action.VIEW', '-d', `http://localhost:${port}/`, BROWSER);
       const sockets = devtoolsSockets(await adb('shell', 'cat', '/proc/net/unix'));
@@ -144,6 +151,7 @@ async function main() {
     console.log(`${path.relative(ROOT, opts.social)}: ${Math.round(fs.statSync(opts.social).size / 1024)} KB · the link preview's picture`);
   } finally {
     if (forward) await adb('forward', '--remove', `tcp:${forward}`).catch(() => {});
+    await chrome?.close();
   }
 }
 

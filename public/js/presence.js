@@ -1,8 +1,13 @@
 // Who is in the shared session (together.js), in words: where a visitor is, how the session is
-// doing, and the others for the control panel. Pure, for the tests.
+// doing, what the toasts say, and the others for the overlay and the control panel. Pure, for the
+// tests.
 import { HALLWAY_ID } from 'common/door.js';
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+const inPlace = (page, envs) => {
+  const where = placeName(page, envs);
+  return where === 'elsewhere' ? where : `in ${where}`;
+};
 
 /**
  * Where a visitor on `page` is: 'here' in the hallway, an environment's title (other sites take
@@ -42,6 +47,34 @@ export function statusText({ online = true, loaded, relays, slow, here = 0, away
   if (!loaded || !relays) return slow ? "Can't reach the relays" : 'Connecting…';
   if (failed) return `Couldn't connect to ${plural(failed, 'visitor')}`;
   return 'Waiting for others';
+}
+
+/**
+ * A notice from the session (layersharedsession's together.js) as its toast: a visitor said hello
+ * (`join`), came into the hallway from another page (`arrive`), left (`leave`) or waved (`wave`).
+ * @param {{ kind: string, peer: { name?: string|null, page?: string|null } }} notice
+ * @param {Array<{id: string, title: string}>} envs
+ */
+export function noticeText({ kind, peer }, envs) {
+  const name = peer.name || 'Someone';
+  const here = !peer.page || peer.page === HALLWAY_ID;
+  if (kind === 'join') return peer.page === HALLWAY_ID ? `${name} is here` : `${name} is in the session, ${inPlace(peer.page, envs)}`;
+  if (kind === 'arrive') return `${name} came into the hallway`;
+  if (kind === 'leave') return `${name} left the session`;
+  if (kind === 'wave') return here ? `${name} waved` : `${name} waved, ${inPlace(peer.page, envs)}`;
+  return '';
+}
+
+/**
+ * The others whose hello has come (the session's peers), for the overlay: { peerId, name, color,
+ * where, rtt }, those here first, then by name.
+ * @param {Array<{peerId: string, name: string, color: string, page: string, rtt: number|null}>} peers
+ * @param {Array<{id: string, title: string}>} envs
+ */
+export function peopleList(peers, envs) {
+  return peers
+    .map((p) => ({ peerId: p.peerId, name: p.name, color: p.color, where: placeName(p.page, envs), rtt: p.rtt }))
+    .sort((a, b) => (b.where === 'here') - (a.where === 'here') || a.name.localeCompare(b.name));
 }
 
 /**
