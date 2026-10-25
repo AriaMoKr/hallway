@@ -6,17 +6,22 @@
  * @param {string} o.search    location.search
  * @param {string} o.referrer  document.referrer
  * @param {string} [o.navType] the navigation's type ('navigate', 'reload', 'back_forward', …)
+ * @param {string} [o.entryDoorId] the door this history entry was left by (history.state)
  * @param {string} [o.lastDoorId] the door last gone through in this tab (sessionStorage)
  * @param {Array<{id: string, url: string}>} o.envs
  * @returns {string|null} the environment's id
  */
-export function arrivalDoorId({ search, referrer, navType, lastDoorId, envs }) {
+export function arrivalDoorId({ search, referrer, navType, entryDoorId, lastDoorId, envs }) {
   const known = (id) => id && envs.some((e) => e.id === id);
+  const back = navType === 'back_forward';
+  // Back (or Forward) to the hallway: the door this entry was left by, though its ?from= says
+  // which one the visitor first came out of.
+  if (back && known(entryDoorId)) return entryDoorId;
   const from = new URLSearchParams(search).get('from');
   if (known(from)) return from;
-  // Back (or Forward) to the hallway: the referrer is the one this page first had, not the
-  // environment just left, but the tab remembers which door that was.
-  if (navType === 'back_forward' && known(lastDoorId)) return lastDoorId;
+  // Back to an entry left some other way: the referrer is the one this page first had, not the
+  // environment just left, but the tab remembers the last door gone through.
+  if (back && known(lastDoorId)) return lastDoorId;
   return matchReferrer(referrer, envs)?.id ?? null;
 }
 

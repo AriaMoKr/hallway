@@ -186,7 +186,8 @@ too, shared with the sites behind the doors.
 
 The hallway's own part: `public/js/link.js` measures how a visitor goes through one of its doors
 (`doorPose`, the link's `dx`, `yaw` and `pitch`); `public/js/arrival.js` works out which door a
-visitor came back out of (`?from=`, Back, or the referrer); and the page takes a VR session that
+visitor came back out of (with Back, the door the page was left by, kept in its history entry;
+else `?from=`, or the referrer); and the page takes a VR session that
 Quest Browser grants it (`sessiongranted`) at once, so a visitor coming back in VR stays in VR.
 
 ## Rendering the door views

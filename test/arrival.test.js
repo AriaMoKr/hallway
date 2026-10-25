@@ -7,7 +7,7 @@ const envs = [
   { id: 'garden', url: 'https://ariamokr.github.io/garden/' },
   { id: 'far', url: 'https://example.org/' },
 ];
-const arrive = (o) => arrivalDoorId({ search: '', referrer: '', navType: 'navigate', lastDoorId: null, envs, ...o });
+const arrive = (o) => arrivalDoorId({ search: '', referrer: '', navType: 'navigate', entryDoorId: null, lastDoorId: null, envs, ...o });
 
 test('?from= names the door', () => {
   assert.equal(arrive({ search: '?from=garden' }), 'garden');
@@ -24,11 +24,20 @@ test('a referrer from inside an environment names its door', () => {
   assert.equal(arrive({ referrer: 'not a url' }), null);
 });
 
-test('Back to the hallway: the door last gone through in this tab', () => {
+test('Back to the hallway: the door its history entry was left by', () => {
+  assert.equal(arrive({ navType: 'back_forward', entryDoorId: 'garden' }), 'garden');
+  // Came out of vrlbry's door (?from=vrlbry), went through the garden's, and pressed Back.
+  assert.equal(arrive({ search: '?from=vrlbry', navType: 'back_forward', entryDoorId: 'garden', lastDoorId: 'garden' }), 'garden', 'not the ?from= it was first reached with');
+  assert.equal(arrive({ search: '?from=vrlbry', navType: 'back_forward', entryDoorId: 'garden', lastDoorId: 'vrlbry' }), 'garden', 'nor the last door of the tab, gone through from another entry');
+  assert.equal(arrive({ search: '?from=vrlbry', navType: 'reload', entryDoorId: 'garden' }), 'vrlbry', 'a reload is not Back');
+  assert.equal(arrive({ search: '?from=vrlbry', navType: 'back_forward', entryDoorId: 'gone' }), 'vrlbry');
+});
+
+test('Back to an entry left some other way: ?from=, then the door last gone through in this tab', () => {
   assert.equal(arrive({ navType: 'back_forward', lastDoorId: 'garden' }), 'garden');
   assert.equal(arrive({ navType: 'navigate', lastDoorId: 'garden' }), null, 'a new visit starts at the entrance');
   assert.equal(arrive({ navType: 'back_forward', lastDoorId: 'gone' }), null);
-  assert.equal(arrive({ search: '?from=vrlbry', navType: 'back_forward', lastDoorId: 'garden' }), 'vrlbry', '?from= wins');
+  assert.equal(arrive({ search: '?from=vrlbry', navType: 'back_forward', lastDoorId: 'garden' }), 'vrlbry', '?from= before the tab\'s door');
 });
 
 test('the longest matching URL wins', () => {

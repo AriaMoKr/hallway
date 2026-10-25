@@ -23,6 +23,8 @@ import { roomFromUrl } from 'layersharedsession/room.js';
 
 const params = new URLSearchParams(location.search);
 const LAST_DOOR = 'hallway.lastDoor';
+// The door a history entry was left by, in its state: Back or Forward to it starts there.
+const ENTRY_DOOR = 'hallwayDoor';
 
 // Dev: emulate a Quest 3 with IWER (before anything asks navigator.xr). Chromium has a native
 // navigator.xr even without a headset, so it is replaced.
@@ -38,11 +40,18 @@ if (params.get('xr') === 'emulate') {
   }
 }
 
+/** Going through a door: the tab remembers it, and so does this page's history entry. */
 function rememberDoor(id) {
   try {
     sessionStorage.setItem(LAST_DOOR, id);
   } catch {
-    // Storage blocked: Back then starts at the entrance.
+    // Storage blocked: the history entry still has it.
+  }
+  try {
+    // Beside what else the entry's state holds (the layer keeps it when it changes ?room=).
+    history.replaceState({ ...history.state, [ENTRY_DOOR]: id }, '');
+  } catch {
+    // Too many history calls at once (browsers limit them): the tab's door has to do.
   }
 }
 function lastDoor() {
@@ -51,6 +60,10 @@ function lastDoor() {
   } catch {
     return null;
   }
+}
+/** The door this history entry was left by, if it was left by one. */
+function entryDoor() {
+  return history.state?.[ENTRY_DOOR] ?? null;
 }
 
 let together = null; // the shared session, made once the scene is (below)
@@ -158,7 +171,7 @@ const browserStorage = (name) => {
 const spawnKey = hash(loadIdentity(browserStorage('sessionStorage'), browserStorage('localStorage')).memberId);
 function startPose() {
   const navType = performance.getEntriesByType?.('navigation')?.[0]?.type;
-  const id = arrivalDoorId({ search: location.search, referrer: document.referrer, navType, lastDoorId: lastDoor(), envs: ENVIRONMENTS });
+  const id = arrivalDoorId({ search: location.search, referrer: document.referrer, navType, entryDoorId: entryDoor(), lastDoorId: lastDoor(), envs: ENVIRONMENTS });
   const door = id && L.doors.find((d) => d.env?.id === id);
   return door ? doorSpawn(L, door, spawnKey) : entranceSpawn(L, spawnKey);
 }
@@ -205,7 +218,7 @@ function arrive(door) {
 window.addEventListener('pageshow', (e) => {
   if (!e.persisted) return;
   reloadSettings();
-  const id = lastDoor();
+  const id = entryDoor() ?? lastDoor();
   arrive(L.doors.find((d) => d.env && d.env.id === id) || leaving);
 });
 // Leaving the page another way (a link, the address bar, closing it): leave the session too.
