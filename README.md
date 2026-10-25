@@ -10,7 +10,8 @@ room where Project Gutenberg's books on music play their scores;
 [Outside](https://ariamokr.github.io/outside/), a small garden with a stream, a pond and a bench to
 read on; and two rooms still empty, [art](https://ariamokr.github.io/art/), soon a gallery of art,
 and [video](https://ariamokr.github.io/video/), soon a room to watch videos in. Walk the hallway in
-VR on a Meta Quest, on a desktop or on a phone. There is nothing to install.
+VR on a Meta Quest, on a desktop or on a phone, with nothing to install, or on an Android TV with
+its remote, in [the TV app](#the-tv-app).
 
 ![The hallway: a library's bookcases through an open door under a Library sign, and more doors and signs down a chequered floor to a window onto fields in the afternoon](public/social.jpg)
 
@@ -28,6 +29,7 @@ door you left by. Doors with no environment yet are drawn closed.
 | Phone | drag | tap the floor | tap it |
 | Headset | your head | left stick walks (or aims a teleport), right stick turns, trigger at the floor teleports | trigger (or pinch) at it, or step through it |
 | Gamepad | right stick | left stick (click it in to hurry) | aim the dot at it and press A, or walk into it |
+| TV remote | ← and → turn | ↑ and ↓ | aim the dot at it and press OK, or walk into it |
 
 A gamepad (Xbox, PlayStation or another Bluetooth pad) works on a desktop or a phone, as it does
 in vrlbry: it takes over as soon as you use it, and moving the mouse hands control back. While it
@@ -68,6 +70,38 @@ The same choices, and Start / Leave shared session, are under **Settings** in th
 doors list, as ordinary controls a keyboard or a screen reader can reach. The doors list is the
 hallway as text: each door is a link, its name in a tint of its glow that reads at 4.5:1. On a
 short screen, such as a phone's or one turned on its side, the card scrolls.
+
+## The TV app
+
+On an Android TV the hallway runs in [AriaMoKr/HallwayApp](https://github.com/AriaMoKr/HallwayApp),
+an app that is this site in a full-screen WebView; its README says how to install it. The app ends
+its user agent with ` HallwayTV/<version>`, and the page then shows the 10-foot view: larger text in
+the card and on the control panel, and a thick focus ring on a dark halo, to be seen across the
+room. There is no Enter VR or Fullscreen. The hint at the foot of the screen says what the keys do.
+
+- **Walking**, ↑ and ↓ walk and ← and → turn. A dot in the middle of the view shows what **OK**
+  uses, as a gamepad's A does: a door, a button on the control panel, or a spot on the floor.
+- **Menu**, or holding **Back**, moves the focus into the card: the doors list, Together and
+  Settings. There ↑ and ↓ go from control to control (a choice, such as Motion, is one stop), ← and
+  → change a choice, and OK presses or ticks. **Back** or Menu walks again, and Menu later comes
+  back to the control left.
+- **Back**, walking, goes back a page: from a room behind a door, to that door in the hallway; from
+  the hallway, out of the app.
+- **Together.** A TV can't copy a link, so the Together section shows the invite link to open on a
+  phone or a computer. To join a session started elsewhere, type its room (`k3vd-q8hn`, the end of
+  its invite link) or the link under Settings, **Or join one by its room**: OK on the box opens the
+  TV's keyboard.
+
+A gamepad paired with the TV works as it does anywhere: the app's WebView passes it to the page.
+
+The app asks the page what Back and Menu do: it calls `window.hallwayTV.back()` or `.menu()`, and
+the page returns true when it used the key. Without that (the other sites behind the doors don't
+define it), Back goes back a page, or out of the app, and Menu does nothing. The other sites run as
+they are, with their own keys: the arrows walk in most of them, and HallwayApp's README notes what
+the remote can't reach in each.
+
+`?tv=emulate` shows the TV's page in any browser, with the arrows, Enter for OK and Escape for
+Back in the card. Menu is the app's, so there `__hallway.remote.menu()` stands in for it.
 
 ## Together
 

@@ -4,6 +4,7 @@
 //   gamepad: as in vrlbry, it takes over when used and the mouse takes it back: the left stick
 //            walks, the right one looks, A uses what the middle of the view is on
 //            (common/gamepad.js)
+//   TV:      the remote's arrows walk and turn, and OK uses the middle of the view (tv.js)
 //   headset: point and pull the trigger (or pinch) at a door, the floor or the control panel; the
 //            left stick walks (move 'smooth') or aims a teleport (move 'teleport'), the right one
 //            turns in steps (turn 'snap') or smoothly (turn 'smooth'); or walk through a doorway
@@ -78,6 +79,8 @@ export class Controls {
     this._pads = 0; // connected; none, and nothing is polled
     /** Whether a gamepad is connected. */
     this.hasPad = false;
+    /** The middle of the view is the pointer whatever is used (a TV, whose remote has no pointer: tv.js). */
+    this.aimMiddle = false;
     this.auto = null; // a walk under way: { points: [[x, z], …], i, face: door|null, speed }
     this._down = null;
     this._mouse = null;
@@ -228,14 +231,14 @@ export class Controls {
       this._move(p.x + (-sin * f + cos * r) * step, p.z + (-cos * f - sin * r) * step);
     }
     // Buttons act once per press.
-    if (s.use && !this._padUse) this._useMiddle();
+    if (s.use && !this._padUse) this.useMiddle();
     if (s.back && !this._padBack) this.onPadBack();
     this._padUse = s.use;
     this._padBack = s.back;
   }
 
-  /** A on a gamepad: what the middle of the view is on, as a click there would. */
-  _useMiddle() {
+  /** A on a gamepad, or OK on a TV's remote: what the middle of the view is on, as a click there would. */
+  useMiddle() {
     this.camera.updateWorldMatrix(true, false);
     const hit = this._pickNdc(0, 0);
     if (!hit) return;
@@ -283,7 +286,7 @@ export class Controls {
 
   _updateHover() {
     let door = null, button = null;
-    const aim = this.padActive;
+    const aim = this.padActive || this.aimMiddle;
     if (aim || (this._mouse && !this._down)) {
       if (aim) this.camera.updateWorldMatrix(true, false);
       const hit = aim ? this._pickNdc(0, 0) : this._pickScreen(this._mouse.x, this._mouse.y);
@@ -344,15 +347,16 @@ export class Controls {
     window.addEventListener('keydown', (e) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.target?.closest?.('input, textarea, select, [contenteditable]')) return; // typing a name
-      const k = KEYS[e.code];
+      // A TV remote's arrows may come without a code (tv.js): their key names them, as the code would.
+      const k = KEYS[e.code || e.key];
       if (!k) return;
-      if (e.code.startsWith('Arrow')) e.preventDefault();
+      if ((e.code || e.key).startsWith('Arrow')) e.preventDefault();
       this.keys.add(k);
       if (k !== 'run') this.auto = null;
       this.onActivity();
     });
     window.addEventListener('keyup', (e) => {
-      const k = KEYS[e.code];
+      const k = KEYS[e.code || e.key];
       if (k) this.keys.delete(k);
     });
     window.addEventListener('blur', () => this.keys.clear());

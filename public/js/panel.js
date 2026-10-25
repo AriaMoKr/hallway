@@ -3,7 +3,8 @@
 // and the shared session (together.js): Start / Leave, how it's going, its invite link to read out, and
 // who else is in it and where (up to four, then "+N more"). Its canvas is redrawn only when what it
 // shows changes (a setting, a session, the button pointed at, someone coming, going or renaming),
-// never per frame: the people come as a string (presence.js), and round trips stay off it.
+// never per frame: the people come as a string (presence.js), and round trips stay off it. Large (a
+// TV's, tv.js) its text is a fifth larger, every line fitted to where it goes.
 import * as THREE from 'three';
 import { PANEL, PANEL_PX, PANEL_BUTTONS } from './layout.js';
 import { GOLD, SANS, SERIF, enamel } from './textures.js';
@@ -22,10 +23,12 @@ const HINTS = {
 };
 const SESSION_LABELS = { on: 'Leave shared session', off: 'Start shared session' };
 const KEYS = ['vr', 'move', 'turn', 'motion', 'vignette', 'seated', 'room', 'link', 'status', 'people'];
+const LARGE = 1.2;
 
 export class ControlPanel {
-  /** @param {{ halfWidth: number, color: THREE.Color, anisotropy?: number }} o */
-  constructor({ halfWidth, color, anisotropy = 1 }) {
+  /** @param {{ halfWidth: number, color: THREE.Color, anisotropy?: number, large?: boolean }} o */
+  constructor({ halfWidth, color, anisotropy = 1, large = false }) {
+    this.scale = large ? LARGE : 1;
     this.canvas = document.createElement('canvas');
     this.canvas.width = PANEL_PX.width;
     this.canvas.height = PANEL_PX.height;
@@ -64,16 +67,19 @@ export class ControlPanel {
 
   _draw() {
     const g = this.ctx, W = PANEL_PX.width, H = PANEL_PX.height;
+    const px = (size) => Math.round(size * this.scale);
     enamel(g, W, H, 10);
     g.textAlign = 'left';
     g.textBaseline = 'alphabetic';
     g.fillStyle = GOLD;
-    g.font = `600 30px ${SERIF}`;
+    g.font = `600 ${px(30)}px ${SERIF}`;
     g.fillText('Controls', 32, 50);
     g.fillStyle = '#b9a98d';
-    g.font = `24px ${SANS}`;
     g.textBaseline = 'middle';
-    for (const [name, y] of ROWS) g.fillText(name, 34, y);
+    for (const [name, y] of ROWS) {
+      fitText(g, name, 120, px(24)); // clear of the buttons at 160
+      g.fillText(name, 34, y);
+    }
     for (const [id, x0, y0, x1, y1] of PANEL_BUTTONS) {
       let label, selected = false, disabled = false;
       if (id === 'vr') {
@@ -95,12 +101,12 @@ export class ControlPanel {
       g.strokeStyle = disabled ? 'rgba(224,187,114,0.3)' : GOLD;
       g.stroke();
       g.fillStyle = selected ? '#1a1208' : disabled ? 'rgba(239,229,207,0.45)' : '#efe5cf';
-      g.font = `600 ${(id === 'vr' && disabled) || id.startsWith('motion:') ? 22 : 26}px ${SANS}`;
+      fitText(g, label, x1 - x0 - 16, px((id === 'vr' && disabled) || id.startsWith('motion:') ? 22 : 26), '600 ');
       g.textAlign = 'center';
       g.fillText(label, (x0 + x1) / 2, (y0 + y1) / 2 + 1);
     }
     g.fillStyle = '#b9a98d';
-    g.font = `18px ${SANS}`;
+    fitText(g, HINTS[this.state.move], W - 64, px(18));
     g.textAlign = 'center';
     g.fillText(HINTS[this.state.move], W / 2, 268);
 
@@ -109,18 +115,18 @@ export class ControlPanel {
     g.fillRect(32, 486, W - 64, 2);
     g.textAlign = 'left';
     g.fillStyle = GOLD;
-    g.font = `600 26px ${SERIF}`;
+    g.font = `600 ${px(26)}px ${SERIF}`;
     g.fillText('Together', 32, 514);
     if (this.state.room) {
       g.textAlign = 'right';
       g.fillStyle = '#efe5cf';
-      fitText(g, this.state.status, W - 210, 20);
+      fitText(g, this.state.status, W - 210, px(20));
       g.fillText(this.state.status, W - 32, 515);
     }
     g.textAlign = 'center';
     g.fillStyle = '#b9a98d';
     const note = this.state.room ? this.state.link : 'Start one, share its link, and see each other here';
-    fitText(g, note, W - 64, 18);
+    fitText(g, note, W - 64, px(18));
     g.fillText(note, W / 2, 612);
 
     // Who else is in it, and where.
@@ -131,18 +137,17 @@ export class ControlPanel {
       if (place === undefined) {
         g.textAlign = 'left';
         g.fillStyle = '#b9a98d';
-        g.font = `18px ${SANS}`;
+        g.font = `${px(18)}px ${SANS}`;
         g.fillText(name, 44, y);
         return;
       }
       g.textAlign = 'right';
       g.fillStyle = '#b9a98d';
-      fitText(g, place, 150, 18);
+      fitText(g, place, 150, px(18));
       g.fillText(place, W - 44, y);
       g.textAlign = 'left';
       g.fillStyle = '#efe5cf';
-      g.font = `600 19px ${SANS}`;
-      fitText(g, name, W - 88 - 170, 19, '600 ');
+      fitText(g, name, W - 88 - 170, px(19), '600 ');
       g.fillText(name, 44, y);
     });
     this.texture.needsUpdate = true;

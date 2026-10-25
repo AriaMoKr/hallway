@@ -32,7 +32,8 @@ const WINDOW_EYE = 1.55;
 // The room seen through a doorway: its picture hangs this far back, its horizon at eye height.
 const PICTURE = { depth: 2.4, height: 3.0, eye: 1.6, horizon: 0.56 };
 
-export function buildHall(envs, { anisotropy = 1 } = {}) {
+/** large: the control panel's text larger, for a TV seen from across a room (tv.js). */
+export function buildHall(envs, { anisotropy = 1, large = false } = {}) {
   const L = layoutHall(envs);
   const { width: W, height: H, doorWidth: DW, doorHeight: DH, reveal: R } = L.hall;
   const hw = L.halfWidth, z0 = L.zStart, z1 = L.zEnd;
@@ -171,7 +172,7 @@ export function buildHall(envs, { anisotropy = 1 } = {}) {
   // The control panel, in a wooden frame on the wall.
   const pw = PANEL.side * hw;
   box([pw, PANEL.y - PANEL.height / 2 - 0.025, PANEL.z - PANEL.width / 2 - 0.025], [pw - PANEL.side * (PANEL.depth - 0.004), PANEL.y + PANEL.height / 2 + 0.025, PANEL.z + PANEL.width / 2 + 0.025], DARK_WOOD);
-  const panel = new ControlPanel({ halfWidth: hw, anisotropy, color: lightColor([pw, PANEL.y, PANEL.z], [-PANEL.side, 0, 0]) });
+  const panel = new ControlPanel({ halfWidth: hw, anisotropy, large, color: lightColor([pw, PANEL.y, PANEL.z], [-PANEL.side, 0, 0]) });
   group.add(panel.mesh);
 
   add(lit(trim), new THREE.MeshBasicMaterial({ vertexColors: true }), 'trim');

@@ -4,7 +4,9 @@
 // it's going, who else is in it) and the Wave and Copy invite link buttons, the dot a gamepad aims
 // with, and short messages. Its Settings hold what the control panel on the wall offers in 3D (how
 // to move and turn in VR, the accessibility settings: motion, the vignette, seated; Start / Leave
-// shared session) as real controls, so a keyboard or a screen reader reaches them too. Names come from other visitors: they go in as text, never as HTML.
+// shared session) as real controls, so a keyboard or a screen reader reaches them too. On a TV
+// (tv.js) there is nothing to copy a link to: the invite link is shown to type on another device,
+// and a room another device shows can be joined by its name. Names come from other visitors: they go in as text, never as HTML.
 import { readable } from './color.js';
 
 const COLLAPSED = 'hallway.doorsCollapsed';
@@ -42,9 +44,11 @@ export class Overlay {
    * @param {Array} envs
    * @param {(env) => string} href the link a door opens (link.js)
    * @param {(env) => void} onLeave called when a door's link is followed
+   * @param {boolean} tv the TV app's page (tv.js)
    */
-  constructor(envs, { href = (env) => env.url, onLeave = () => {} } = {}) {
+  constructor(envs, { href = (env) => env.url, onLeave = () => {}, tv = false } = {}) {
     this.root = document.getElementById('overlay');
+    this.tv = tv;
     this.envs = envs;
     this.href = href;
     this.links = new Map();
@@ -74,11 +78,13 @@ export class Overlay {
     });
     this.status = el('span', { class: 'together-status' });
     this.people = el('ul', { class: 'people', 'aria-label': 'Others in the shared session' });
+    // On a TV, the address others open to join (setInvite).
+    this.inviteText = tv ? el('p', { class: 'together-note invite-text' }) : null;
     this.together = el('section', { class: 'together', hidden: '', 'aria-label': 'Shared session' },
       el('header', {}, el('h2', {}, 'Together'), this.status),
       el('label', { class: 'me' }, this.myDot, this.myName),
       this.people,
-      el('p', { class: 'together-note' }, 'Set your name here before entering VR: there is no typing in a headset.'));
+      this.inviteText ?? el('p', { class: 'together-note' }, 'Set your name here before entering VR: there is no typing in a headset.'));
     this.card.append(this.together);
     // The control panel's choices (main.js's controls.onPanel does the rest), in the same words.
     /** (key, value) when a movement choice is made: 'move' 'smooth' | 'teleport', 'turn' 'snap' | 'smooth'. */
@@ -117,7 +123,18 @@ export class Overlay {
       check('seated', 'Seated: raise the view in VR'),
       this.session);
     this.card.append(this.settings);
-    this.hint = el('p', { class: 'hint' });
+    /** (text) when a room is given to join, on a TV: what was typed (main.js finds the room in it). */
+    this.onJoin = () => {};
+    if (tv) {
+      this.joinRoom = el('input', { class: 'join-room', type: 'text', maxlength: '120', autocomplete: 'off', autocapitalize: 'none', spellcheck: 'false', placeholder: 'k3vd-q8hn' });
+      this.join = el('form', { class: 'join' }, el('label', {}, 'Or join one by its room', this.joinRoom), el('button', { type: 'submit' }, 'Join'));
+      this.join.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.onJoin(this.joinRoom.value);
+      });
+      this.settings.append(this.join);
+    }
+    this.hint = el('p', { class: 'hint', id: 'hint' });
     this.fullscreen = el('button', { class: 'pill', type: 'button', hidden: '' }, 'Fullscreen');
     this.vr = el('button', { class: 'pill vr', type: 'button', hidden: '' }, 'Enter VR');
     this.invite = el('button', { class: 'pill invite', type: 'button', hidden: '' }, 'Copy invite link');
@@ -140,13 +157,15 @@ export class Overlay {
     if (save) store(COLLAPSED, collapsed ? '1' : null);
   }
 
-  /** @param {'mouse'|'touch'|'gamepad'} how */
+  /** @param {'mouse'|'touch'|'gamepad'|'tv'|'tv-card'} how  tv: walking with a remote; tv-card: in the card */
   setHint(how) {
     this.hint.classList.remove('gone');
     this.hint.textContent = {
       touch: 'Drag to look · tap the floor to walk · tap a glowing door to go in',
       mouse: 'Drag to look around · WASD or arrows to walk · click a glowing door to go through',
       gamepad: 'Right stick to look · left stick to walk · A goes through a door',
+      tv: 'Arrows: walk and turn · OK: the door in the middle · Menu or hold Back: doors and settings',
+      'tv-card': 'Up, down: from control to control · left, right: a choice · OK: choose · Back: walk again',
     }[how];
     clearTimeout(this._hintTimer);
     this._hintTimer = setTimeout(() => this.hideHint(), 12000);
@@ -172,11 +191,16 @@ export class Overlay {
     }
     const label = room ? 'Leave shared session' : 'Start shared session';
     if (this.session.textContent !== label) this.session.textContent = label;
+    if (this.join && this.join.hidden !== !!room) this.join.hidden = !!room;
   }
 
-  /** The shared session's invite link (together.js), or '' when not in one: hides the button. */
+  /** The shared session's invite link (together.js), or '' when not in one: hides the button. On a TV, the link to type elsewhere. */
   setInvite(link) {
     this._inviteLink = link;
+    if (this.inviteText) {
+      if (link) this.inviteText.replaceChildren('To join from a phone or a computer, open ', el('span', { class: 'invite-link' }, link.replace(/^https?:\/\//, '')));
+      return;
+    }
     this.invite.hidden = !link;
   }
 

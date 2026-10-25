@@ -2,7 +2,8 @@
 // (or click it, or point at it in VR and pull the trigger) and the page goes to that environment.
 // Coming back, from its link or with Back, puts the viewer in front of the door they left by.
 // A shared session (together.js), started from the control panel or joined from an invite link,
-// shows the others in it, and the doors carry it into the environments and back.
+// shows the others in it, and the doors carry it into the environments and back. In the Android TV
+// app (tv.js) it is the 10-foot view, walked with the remote.
 import * as THREE from 'three';
 import { ENVIRONMENTS } from './environments.js';
 import { HALL, doorCrossed, doorSpawn, entranceSpawn } from './layout.js';
@@ -20,8 +21,12 @@ import { doorView, renderDoorView, renderHallView } from './door-view.js';
 import { hallwayTogether, noticeToast, panelPeople, sessionPeople, sessionStatus } from './together.js';
 import { hash, loadIdentity } from 'layersharedsession/identity.js';
 import { roomFromUrl } from 'layersharedsession/room.js';
+import { Remote, isTV, roomFromInput } from './tv.js';
 
 const params = new URLSearchParams(location.search);
+// The TV app's page (?tv=emulate: as if, in any browser).
+const tv = isTV(navigator.userAgent) || params.get('tv') === 'emulate';
+document.documentElement.classList.toggle('tv', tv);
 const LAST_DOOR = 'hallway.lastDoor';
 // The door a history entry was left by, in its state: Back or Forward to it starts there.
 const ENTRY_DOOR = 'hallwayDoor';
@@ -70,6 +75,7 @@ let together = null; // the shared session, made once the scene is (below)
 const overlay = new Overlay(ENVIRONMENTS, {
   href: (env) => doorLink(env, { here: location.href, hall: HALL, room: together?.room ?? null }),
   onLeave: (env) => rememberDoor(env.id),
+  tv,
 });
 
 let renderer;
@@ -106,7 +112,7 @@ rig.name = 'rig';
 rig.add(camera);
 scene.add(rig);
 
-const hall = buildHall(ENVIRONMENTS, { anisotropy });
+const hall = buildHall(ENVIRONMENTS, { anisotropy, large: tv });
 scene.add(hall.group);
 const L = hall.layout;
 
@@ -238,7 +244,18 @@ controls.onActivity = () => {
   active = true;
   overlay.hideHint();
 };
-overlay.setHint(matchMedia('(pointer: coarse)').matches ? 'touch' : 'mouse');
+overlay.setHint(tv ? 'tv' : matchMedia('(pointer: coarse)').matches ? 'touch' : 'mouse');
+
+// On a TV, the remote (tv.js): the view holds the focus while walking, the card when Menu is pressed.
+// The app asks window.hallwayTV what Back and Menu do.
+let remote = null;
+if (tv) {
+  controls.aimMiddle = true;
+  renderer.domElement.setAttribute('aria-describedby', overlay.hint.id);
+  remote = new Remote({ root: overlay.root, view: renderer.domElement, use: () => controls.useMiddle() });
+  remote.onMode = (inCard) => overlay.setHint(inCard ? 'tv-card' : 'tv');
+  window.hallwayTV = { menu: () => remote.menu(), back: () => remote.back() };
+}
 
 // ── Fullscreen, and the gamepad ──────────────────────────────────────────────
 
@@ -255,19 +272,20 @@ function onFullscreenChange() {
   overlay.setFullscreen(on);
   if (on) overlay.toast(controls.hasPad ? 'Esc or B leaves fullscreen' : 'Esc leaves fullscreen', 4);
 }
-// Browsers that cannot (an iPhone's) do not get the button.
-if (document.fullscreenEnabled || document.webkitFullscreenEnabled) {
+// Browsers that cannot (an iPhone's) do not get the button, nor does the TV app, which is full screen.
+if (!tv && (document.fullscreenEnabled || document.webkitFullscreenEnabled)) {
   overlay.showFullscreen(toggleFullscreen);
   document.addEventListener('fullscreenchange', onFullscreenChange);
   document.addEventListener('webkitfullscreenchange', onFullscreenChange);
 }
 // As in vrlbry: the gamepad takes over when used (its hint, and a dot in the middle of the view to
-// aim with), and the mouse takes it back. B or Back leaves fullscreen.
+// aim with), and the mouse takes it back. B or Back leaves fullscreen; on a TV, it is the remote's Back.
 controls.onPadActive = (on) => {
   if (on) overlay.setHint('gamepad');
 };
 controls.onPadBack = () => {
-  if (fullscreenElement()) toggleFullscreen();
+  if (remote) remote.padBack();
+  else if (fullscreenElement()) toggleFullscreen();
 };
 
 // ── VR ───────────────────────────────────────────────────────────────────────
@@ -300,7 +318,8 @@ renderer.xr.addEventListener('sessionend', () => {
   overlay.vr.textContent = 'Enter VR';
   showPanel();
 });
-navigator.xr?.isSessionSupported?.('immersive-vr').then((ok) => {
+// Not on a TV, which has no headset (nor, so far, a WebXR in its WebView).
+if (!tv) navigator.xr?.isSessionSupported?.('immersive-vr').then((ok) => {
   vrSupported = ok;
   showPanel();
   if (ok) overlay.showVR(enterVR);
@@ -384,6 +403,18 @@ together.on('change', () => {
 });
 together.on('notice', (notice) => overlay.toast(noticeToast(notice), 4));
 overlay.onName = (name) => together.setName(name);
+// On a TV: a room another device shows (its invite link, or the room's name).
+overlay.onJoin = (text) => {
+  const room = roomFromInput(text);
+  if (!room) {
+    overlay.toast('A room is named like k3vd-q8hn: the end of its invite link, after ?room=', 6);
+    return;
+  }
+  overlay.joinRoom.value = '';
+  together.start(room);
+  overlay.toast(`Joined the shared session ${room}`);
+  remote.walk(); // the box is gone (in a session): back to the view
+};
 // A wave: the Wave button, or a controller's grip in VR (which pulses, so the waver feels it go).
 overlay.onWave = () => {
   if (together.wave()) overlay.toast('You waved', 2);
@@ -410,7 +441,7 @@ function step(dt) {
   together.update(performance.now());
   hall.panel.setHover(controls.hoverPanel);
   overlay.setHover(controls.hoverDoor?.env ?? null);
-  overlay.setAim(controls.padActive && !renderer.xr.isPresenting, !!(controls.hoverDoor?.env || controls.hoverPanel));
+  overlay.setAim((controls.padActive || (remote !== null && !remote.inCard)) && !renderer.xr.isPresenting, !!(controls.hoverDoor?.env || controls.hoverPanel));
   if (!leaving) {
     const door = doorCrossed(L, head.x, head.z);
     if (door) go(door);
@@ -435,7 +466,7 @@ fade.to(0, fadeTime(0.8));
 
 // For scripted testing. A hidden page gets no animation frames: drive it with tick().
 window.__hallway = {
-  THREE, renderer, scene, camera, rig, hall, layout: L, controls, overlay, fade, vignette, xrDevice, go, enterVR, together,
+  THREE, renderer, scene, camera, rig, hall, layout: L, controls, overlay, fade, vignette, xrDevice, go, enterVR, together, remote,
   get access() {
     return { ...access, reduce };
   },
