@@ -3,7 +3,8 @@
 // walk and turn, and OK goes through the door in the middle of the view, where a dot shows what it is
 // on (as a gamepad's A does). Menu, or a long press of Back, moves the focus into the card, where up
 // and down go from control to control, left and right through a choice's options, and OK chooses;
-// Escape or Back walk again. The 3D view holds the focus while walking (TalkBack reads its name).
+// Escape or Back walk again. The 3D view holds the focus while walking (TalkBack reads its name; with
+// TalkBack on, the arrows are TalkBack's and never reach the page, but OK on the view does).
 // The app asks the page what Back and Menu do (window.hallwayTV, README "The TV app"): true when the
 // page used the key, else the app goes back a page, or leaves. The pure parts are tested in Node.
 import { isRoom } from 'layersharedsession/room.js';

@@ -93,9 +93,12 @@ room. There is no Enter VR or Fullscreen. The hint at the foot of the screen say
   TV's keyboard.
 
 A gamepad paired with the TV works as it does anywhere: the app's WebView passes it to the page.
-With TalkBack on, TalkBack takes the remote's arrows for its own focus, which reads the view and
-the card's controls one by one, and OK presses what it is on: the settings can be changed that
-way, but the arrows don't walk.
+With TalkBack on, the remote's arrows can't walk: on a TV, TalkBack takes them for its own focus
+before any app gets them, whatever the page says it is (`role="application"` changes nothing). They
+move that focus through the view and the card's controls instead, reading each one, and OK presses
+the control it is on, so the settings can be changed that way. OK on the view still reaches the
+page and uses what the dot is on, and a gamepad still walks and turns: TalkBack leaves its sticks
+alone.
 
 The app asks the page what Back and Menu do: it calls `window.hallwayTV.back()` or `.menu()`, and
 the page returns true when it used the key. Without that (the other sites behind the doors don't
