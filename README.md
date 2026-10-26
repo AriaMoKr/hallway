@@ -83,8 +83,8 @@ room. There is no Enter VR or Fullscreen. The hint at the foot of the screen say
   uses, as a gamepad's A does: a door, a button on the control panel, or a spot on the floor.
 - **Menu**, or holding **Back**, moves the focus into the card: the doors list, Together and
   Settings. There ↑ and ↓ go from control to control (a choice, such as Motion, is one stop), ← and
-  → change a choice, and OK presses or ticks. **Back** or Menu walks again, and Menu later comes
-  back to the control left.
+  → change a choice, and OK presses or ticks. **Back** or Menu walks again, and Menu comes back to
+  the control left until the page changes.
 - **Back**, walking, goes back a page: from a room behind a door, to that door in the hallway; from
   the hallway, out of the app.
 - **Together.** A TV can't copy a link, so the Together section shows the invite link to open on a
@@ -93,6 +93,9 @@ room. There is no Enter VR or Fullscreen. The hint at the foot of the screen say
   TV's keyboard.
 
 A gamepad paired with the TV works as it does anywhere: the app's WebView passes it to the page.
+With TalkBack on, TalkBack takes the remote's arrows for its own focus, which reads the view and
+the card's controls one by one, and OK presses what it is on: the settings can be changed that
+way, but the arrows don't walk.
 
 The app asks the page what Back and Menu do: it calls `window.hallwayTV.back()` or `.menu()`, and
 the page returns true when it used the key. Without that (the other sites behind the doors don't
