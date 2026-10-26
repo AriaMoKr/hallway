@@ -157,14 +157,17 @@ export class Overlay {
     if (save) store(COLLAPSED, collapsed ? '1' : null);
   }
 
-  /** @param {'mouse'|'touch'|'gamepad'|'tv'|'tv-card'} how  tv: walking with a remote; tv-card: in the card */
+  /**
+   * @param {'mouse'|'touch'|'gamepad'|'tv'|'tv-card'} how  tv: walking with a remote, and a line for
+   *   TalkBack, which keeps the arrows (the view is described by the hint); tv-card: in the card
+   */
   setHint(how) {
     this.hint.classList.remove('gone');
     this.hint.textContent = {
       touch: 'Drag to look · tap the floor to walk · tap a glowing door to go in',
       mouse: 'Drag to look around · WASD or arrows to walk · click a glowing door to go through',
       gamepad: 'Right stick to look · left stick to walk · A goes through a door',
-      tv: 'Arrows: walk and turn · OK: the door in the middle · Menu or hold Back: doors and settings',
+      tv: 'Arrows: walk and turn · OK: the door in the middle · Menu or hold Back: doors and settings\nWith TalkBack: channel up and down walk, rewind and fast-forward turn',
       'tv-card': 'Up, down: from control to control · left, right: a choice · OK: choose · Back: walk again',
     }[how];
     clearTimeout(this._hintTimer);

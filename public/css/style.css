@@ -176,7 +176,7 @@ html.tv .settings label { gap: 8px; }
 html.tv .settings input { width: 20px; height: 20px; }
 html.tv .settings .check { margin-top: 12px; }
 html.tv .session, html.tv .join button { padding: 7px 18px; font-size: 17px; }
-html.tv .hint { bottom: calc(27px + var(--buttons, 0px) + 8px); max-width: calc(100vw - 96px); padding: 10px 18px; border-radius: 18px; font-size: 17px; }
+html.tv .hint { bottom: calc(27px + var(--buttons, 0px) + 8px); max-width: calc(100vw - 96px); padding: 10px 18px; border-radius: 18px; font-size: 17px; white-space: pre-line; }
 html.tv .buttons { left: 48px; right: 48px; bottom: 27px; }
 html.tv .pill { font-size: 17px; }
 html.tv .toasts { top: 27px; max-width: calc(100vw - 96px); }

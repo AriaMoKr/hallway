@@ -4,7 +4,9 @@
 //   gamepad: as in vrlbry, it takes over when used and the mouse takes it back: the left stick
 //            walks, the right one looks, A uses what the middle of the view is on
 //            (common/gamepad.js)
-//   TV:      the remote's arrows walk and turn, and OK uses the middle of the view (tv.js)
+//   TV:      the remote's arrows walk and turn (with TalkBack on, which keeps them, channel up and
+//            down and rewind and fast-forward: common/tv.js's keyOf), and OK uses the middle of
+//            the view (common/tv.js)
 //   headset: point and pull the trigger (or pinch) at a door, the floor or the control panel; the
 //            left stick walks (move 'smooth') or aims a teleport (move 'teleport'), the right one
 //            turns in steps (turn 'snap') or smoothly (turn 'smooth'); or walk through a doorway
@@ -13,6 +15,7 @@
 import * as THREE from 'three';
 import { castRay, clampToHall, panelButtonAt } from './layout.js';
 import { firstPad, readPad } from 'common/gamepad.js';
+import { keyOf } from 'common/tv.js';
 
 const LOOK = 0.0045; // radians per pixel dragged
 const WALK = 1.9, RUN = 3.8, XR_WALK = 1.8; // metres per second
@@ -23,14 +26,15 @@ const PITCH = 1.35;
 const PAD_TURN = 2.4, PAD_PITCH = 1.6; // radians per second, a gamepad's right stick at full tilt (vrlbry's)
 const EYE = 1.6;
 
-const KEYS = {
+/** A key's name (common/tv.js's keyOf: its code, else its key; a TV's spare keys as the arrows) → what it does. */
+export const KEYS = Object.freeze({
   KeyW: 'forward', ArrowUp: 'forward',
   KeyS: 'back', ArrowDown: 'back',
   KeyA: 'left', KeyD: 'right',
   ArrowLeft: 'turnLeft', KeyQ: 'turnLeft',
   ArrowRight: 'turnRight', KeyE: 'turnRight',
   ShiftLeft: 'run', ShiftRight: 'run',
-};
+});
 
 const wrapAngle = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
@@ -347,16 +351,18 @@ export class Controls {
     window.addEventListener('keydown', (e) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.target?.closest?.('input, textarea, select, [contenteditable]')) return; // typing a name
-      // A TV remote's arrows may come without a code (tv.js): their key names them, as the code would.
-      const k = KEYS[e.code || e.key];
+      // A TV remote's keys may come without a code, and with TalkBack on its channel and media keys
+      // stand for the arrows: keyOf names them all.
+      const name = keyOf(e);
+      const k = KEYS[name];
       if (!k) return;
-      if ((e.code || e.key).startsWith('Arrow')) e.preventDefault();
+      if (name.startsWith('Arrow')) e.preventDefault();
       this.keys.add(k);
       if (k !== 'run') this.auto = null;
       this.onActivity();
     });
     window.addEventListener('keyup', (e) => {
-      const k = KEYS[e.code || e.key];
+      const k = KEYS[keyOf(e)];
       if (k) this.keys.delete(k);
     });
     window.addEventListener('blur', () => this.keys.clear());

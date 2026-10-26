@@ -1,21 +1,15 @@
-// The TV app's page (tv.js): telling it is the app, joining a room typed in, and the card's stops.
+// The TV app's page: what is the hallway's own (joining a room typed in, the 10-foot focus ring, the
+// controls' keys). Telling it is the app, the card's stops and keyOf are common's tv.js, tested there.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { focusStops, isTV, nextStop, roomFromInput } from '../public/js/tv.js';
+import { keyOf } from 'common/tv.js';
+import { KEYS } from '../public/js/controls.js';
+import { roomFromInput } from '../public/js/tv.js';
 
-const BRAVIA = 'Mozilla/5.0 (Linux; Android 12; BRAVIA 4K VH21 Build/STT2.230505.001.S136; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/155.0.8059.43 Mobile Safari/537.36';
-
-test("the TV app's WebView, by the end of its user agent", () => {
-  assert.equal(isTV(`${BRAVIA} HallwayTV/1.0.0`), true);
-  assert.equal(isTV(`${BRAVIA} HallwayTV/0.0.0-dev`), true);
-  assert.equal(isTV(BRAVIA), false, 'another app\'s WebView on the same TV');
-  assert.equal(isTV('Mozilla/5.0 (X11; Linux x86_64) Chrome/155.0 Safari/537.36'), false);
-  assert.equal(isTV('NotHallwayTV/1.0'), false);
-  assert.equal(isTV(undefined), false);
-});
+const root = join(dirname(fileURLToPath(import.meta.url)), '..', 'public');
 
 test('a room to join: its name, or a link to it, as typed on a remote', () => {
   assert.equal(roomFromInput('k3vd-q8hn'), 'k3vd-q8hn');
@@ -32,38 +26,30 @@ test('a room to join: its name, or a link to it, as typed on a remote', () => {
   assert.equal(roomFromInput('x'.repeat(41)), null);
 });
 
-test("the card's stops: every control once, each choice one stop at its checked option", () => {
-  const items = [
-    { radio: '' }, // the Doors toggle
-    { radio: '' }, // a door
-    { radio: 'nav-move', checked: false },
-    { radio: 'nav-move', checked: true },
-    { radio: 'nav-turn', checked: false },
-    { radio: 'nav-turn', checked: false },
-    { radio: '' }, // a checkbox
-    { radio: 'nav-motion', checked: true },
-    { radio: 'nav-motion', checked: false },
-    { radio: 'nav-motion', checked: false },
-    { radio: '' }, // Start shared session
-  ];
-  assert.deepEqual(focusStops(items), [0, 1, 3, 4, 6, 7, 10]);
-  assert.deepEqual(focusStops([]), []);
-});
-
-test('up and down through the stops: from none, the first or the last; at the ends, they stay', () => {
-  assert.equal(nextStop(5, -1, 1), 0);
-  assert.equal(nextStop(5, -1, -1), 4);
-  assert.equal(nextStop(5, 2, 1), 3);
-  assert.equal(nextStop(5, 2, -1), 1);
-  assert.equal(nextStop(5, 4, 1), 4);
-  assert.equal(nextStop(5, 0, -1), 0);
-  assert.equal(nextStop(0, -1, 1), -1);
+test("the remote walks and turns: its arrows (with no code), and with TalkBack on its channel and media keys", () => {
+  const does = (e) => KEYS[keyOf(e)];
+  assert.equal(does({ code: '', key: 'ArrowUp' }), 'forward', "a remote's arrow, with an empty code");
+  assert.equal(does({ code: 'ArrowLeft', key: 'ArrowLeft' }), 'turnLeft');
+  assert.equal(does({ code: '', key: 'ChannelUp' }), 'forward');
+  assert.equal(does({ code: '', key: 'ChannelDown' }), 'back');
+  assert.equal(does({ code: '', key: 'MediaRewind' }), 'turnLeft');
+  assert.equal(does({ code: 'MediaFastForward', key: 'MediaFastForward' }), 'turnRight');
+  assert.equal(does({ code: '', key: 'MediaPlayPause' }), undefined, 'play and pause are not the arrows');
+  assert.equal(does({ code: 'KeyW', key: 'w' }), 'forward', 'a keyboard, as before');
+  assert.equal(does({ code: 'KeyQ', key: 'q' }), 'turnLeft');
 });
 
 test("the 10-foot view's focus ring is thicker than a desktop's, and drawn on a dark halo", () => {
-  const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'public', 'css', 'style.css'), 'utf8');
+  const css = readFileSync(join(root, 'css', 'style.css'), 'utf8');
   const ring = css.match(/html\.tv :focus-visible \{ outline: (\d+)px solid #[0-9a-f]{6}; outline-offset: \d+px; box-shadow: 0 0 0 (\d+)px rgba\(0, 0, 0, [\d.]+\); \}/);
   assert.ok(ring, 'html.tv :focus-visible');
   assert.ok(Number(ring[1]) >= 4, 'at least 4 px');
   assert.ok(Number(ring[2]) > Number(ring[1]) + 3, 'the halo shows round the ring');
+});
+
+test("the TV's hint says how to walk with TalkBack, which keeps the arrows; the view is described by it", () => {
+  const overlay = readFileSync(join(root, 'js', 'overlay.js'), 'utf8');
+  assert.match(overlay, /tv: '[^'\n]*\\nWith TalkBack: channel up and down walk, rewind and fast-forward turn'/);
+  assert.match(readFileSync(join(root, 'css', 'style.css'), 'utf8'), /html\.tv \.hint \{[^}]*white-space: pre-line;/, 'on a line of its own');
+  assert.match(readFileSync(join(root, 'js', 'main.js'), 'utf8'), /setAttribute\('aria-describedby', overlay\.hint\.id\)/);
 });

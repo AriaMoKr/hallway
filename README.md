@@ -97,14 +97,21 @@ With TalkBack on, the remote's arrows can't walk: on a TV, TalkBack takes them f
 before any app gets them, whatever the page says it is (`role="application"` changes nothing). They
 move that focus through the view and the card's controls instead, reading each one, and OK presses
 the control it is on, so the settings can be changed that way. OK on the view still reaches the
-page and uses what the dot is on, and a gamepad still walks and turns: TalkBack leaves its sticks
-alone.
+page and uses what the dot is on. And **channel up and down** still walk, and **rewind and
+fast-forward** turn, as the hint says: TalkBack leaves the remote's channel and media keys to the
+page, which reads those four as the arrows. A gamepad still walks and turns too: TalkBack leaves its
+sticks alone.
 
 The app asks the page what Back and Menu do: it calls `window.hallwayTV.back()` or `.menu()`, and
 the page returns true when it used the key. Without that (the other sites behind the doors don't
-define it), Back goes back a page, or out of the app, and Menu does nothing. The other sites run as
+define it yet), Back goes back a page, or out of the app, and Menu does nothing. The other sites run as
 they are, with their own keys: the arrows walk in most of them, and HallwayApp's README notes what
 the remote can't reach in each.
+
+The TV mode is [AriaMoKr/common](https://github.com/AriaMoKr/common)'s `tv.js`: knowing it is the
+app, the remote and its card, the spare keys for TalkBack, and the answer to Back and Menu. Its
+README's "The TV app" has the checklist the sites behind the doors follow to work with the remote.
+The hallway's own part is joining a session by its room.
 
 `?tv=emulate` shows the TV's page in any browser, with the arrows, Enter for OK and Escape for
 Back in the card. Menu is the app's, so there `__hallway.remote.menu()` stands in for it.

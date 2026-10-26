@@ -3,7 +3,7 @@
 // Coming back, from its link or with Back, puts the viewer in front of the door they left by.
 // A shared session (together.js), started from the control panel or joined from an invite link,
 // shows the others in it, and the doors carry it into the environments and back. In the Android TV
-// app (tv.js) it is the 10-foot view, walked with the remote.
+// app (common's tv.js) it is the 10-foot view, walked with the remote.
 import * as THREE from 'three';
 import { ENVIRONMENTS } from './environments.js';
 import { HALL, doorCrossed, doorSpawn, entranceSpawn } from './layout.js';
@@ -21,11 +21,12 @@ import { doorView, renderDoorView, renderHallView } from './door-view.js';
 import { hallwayTogether, noticeToast, panelPeople, sessionPeople, sessionStatus } from './together.js';
 import { hash, loadIdentity } from 'layersharedsession/identity.js';
 import { roomFromUrl } from 'layersharedsession/room.js';
-import { Remote, isTV, roomFromInput } from './tv.js';
+import { Remote, tvMode } from 'common/tv.js';
+import { roomFromInput } from './tv.js';
 
 const params = new URLSearchParams(location.search);
 // The TV app's page (?tv=emulate: as if, in any browser).
-const tv = isTV(navigator.userAgent) || params.get('tv') === 'emulate';
+const tv = tvMode();
 document.documentElement.classList.toggle('tv', tv);
 const LAST_DOOR = 'hallway.lastDoor';
 // The door a history entry was left by, in its state: Back or Forward to it starts there.
@@ -246,15 +247,16 @@ controls.onActivity = () => {
 };
 overlay.setHint(tv ? 'tv' : matchMedia('(pointer: coarse)').matches ? 'touch' : 'mouse');
 
-// On a TV, the remote (tv.js): the view holds the focus while walking, the card when Menu is pressed.
-// The app asks window.hallwayTV what Back and Menu do.
+// On a TV, the remote (common's tv.js): the view holds the focus while walking, the card when Menu is
+// pressed. The app asks window.hallwayTV what Back and Menu do (answerApp); the hallway has no step
+// back of its own, so walking, Back is the app's.
 let remote = null;
 if (tv) {
   controls.aimMiddle = true;
   renderer.domElement.setAttribute('aria-describedby', overlay.hint.id);
   remote = new Remote({ root: overlay.root, view: renderer.domElement, use: () => controls.useMiddle() });
   remote.onMode = (inCard) => overlay.setHint(inCard ? 'tv-card' : 'tv');
-  window.hallwayTV = { menu: () => remote.menu(), back: () => remote.back() };
+  remote.answerApp(tv);
 }
 
 // ── Fullscreen, and the gamepad ──────────────────────────────────────────────
