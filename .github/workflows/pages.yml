@@ -22,4 +22,4 @@ concurrency:
 
 jobs:
   pages:
-    uses: AriaMoKr/common/.github/workflows/pages.yml@v0.6.0
+    uses: AriaMoKr/common/.github/workflows/pages.yml@v0.6.1

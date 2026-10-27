@@ -89,8 +89,9 @@ room. There is no Enter VR or Fullscreen. The hint at the foot of the screen say
   the hallway, out of the app.
 - **Together.** A TV can't copy a link, so the Together section shows the invite link to open on a
   phone or a computer. To join a session started elsewhere, type its room (`k3vd-q8hn`, the end of
-  its invite link) or the link under Settings, **Or join one by its room**: OK on the box opens the
-  TV's keyboard.
+  its invite link) or the link under Settings, **Or join one by its room**. The TV's keyboard stays
+  down while the remote steps onto a text box (that one, or your name in a session) and past it:
+  OK on the box brings it up, and the keyboard's Enter then keeps the name or joins.
 
 A gamepad paired with the TV works as it does anywhere: the app's WebView passes it to the page.
 With TalkBack on, the remote's arrows can't walk: on a TV, TalkBack takes them for its own focus
