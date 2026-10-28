@@ -60,7 +60,7 @@ export const ENVIRONMENTS = [
     // Made from AriaMoKr/RoomTemplateEmpty: its public/js/config.js's hallwayDoor() is this entry.
     id: 'art',
     title: 'art',
-    subtitle: "An empty room behind the Hallway's door, soon a gallery of art.",
+    subtitle: "A room behind the Hallway's door, soon a gallery of art, with the way into VARTISTE's painting studio on its wall.",
     sign: 'Art Room',
     url: 'https://ariamokr.github.io/art/',
     preview: 'https://ariamokr.github.io/art/hallway-preview.jpg',
