@@ -26,10 +26,10 @@ const pageName = (page) => (page === HALLWAY_ID ? 'the hallway' : placeName(page
 /**
  * The hallway's shared session: everyone on its page is here (no isHere).
  * @param {object} o
- * @param {THREE.Scene} o.scene
- * @param {THREE.Camera} o.camera  the viewer's head
- * @param {THREE.WebGLRenderer} o.renderer
- * @param {() => Array<{controller: THREE.Object3D, source: XRInputSource|null}>} o.hands  controls.js's hands
+ * @param {import('three').Scene} o.scene
+ * @param {import('three').Camera} o.camera  the viewer's head
+ * @param {import('three').WebGLRenderer} o.renderer
+ * @param {() => Array<{controller: import('three').Object3D, source: XRInputSource|null}>} o.hands  controls.js's hands
  */
 export function hallwayTogether({ scene, camera, renderer, hands }) {
   return createTogether({ appId: APP_ID, page: HALLWAY_ID, camera, renderer, hands, avatars: { parent: scene, font: SANS }, pageName });

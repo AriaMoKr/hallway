@@ -164,10 +164,17 @@ logs who came, went, renamed and waved. Its Wave and the hallway's reach each ot
 ```bash
 npm install     # three.js, common, the shared-session layer and Trystero (and IWER, for emulating a headset), copied into public/vendor/
 npm start       # http://localhost:8088/
-npm test
+npm test        # node --test: the hall's layout, the links, the shared session's words, the TV's keys, the page, and tsc's check of public/js/
+npm run types   # tsc's check alone
 ```
 
 It needs Node 22 or later: the tools that drive a Quest use its built-in WebSocket.
+
+`npm test` type-checks `public/js/` with TypeScript, from the modules' JSDoc (`tsconfig.json`:
+`allowJs`, `checkJs`, `noEmit`), against three.js's types and common's and the shared session's.
+Nothing is built: the page is served as it is, and the import map stays. What TypeScript's DOM
+library leaves out is in `types/globals.d.ts`. `strict` comes later, a file at a time, and `tools/`
+and `test/` after it.
 
 `public/` is the whole site: any static server can serve it once `npm install` has filled
 `public/vendor/` with what [`vendor.json`](vendor.json) lists (common's vendor copy, run as the
@@ -277,7 +284,7 @@ the picture a shared link to the hallway shows (see "Publishing"), `public/socia
 (https://ariamokr.github.io/hallway/, from [AriaMoKr/hallway](https://github.com/AriaMoKr/hallway))
 on every push to `main`, through common's workflow
 ([The Pages workflow](https://github.com/AriaMoKr/common#the-pages-workflow)): `npm ci` and
-`npm test` on Node 24, then `public/` as it is. Its tag moves with common's in package.json. In the repository's Settings → Pages, the source must be "GitHub
+`npm test` on Node 24 (tsc's check among the tests), then `public/` as it is. Its tag moves with common's in package.json. In the repository's Settings → Pages, the source must be "GitHub
 Actions". Every URL in the page is relative, so the hallway would also work at another path or at
 the account's own root.
 

@@ -36,6 +36,7 @@ export const PANEL = { side: 1, z: -2.2, y: 1.51, width: 0.56, height: (0.56 * 7
 
 /** The panel's canvas (its shape), and its buttons on it as [id, x0, y0, x1, y1] in canvas pixels (y down). */
 export const PANEL_PX = { width: 512, height: 784 };
+/** @type {[string, number, number, number, number][]} */
 export const PANEL_BUTTONS = [
   ['vr', 32, 66, 480, 118],
   ['move:teleport', 160, 132, 314, 182],
@@ -61,9 +62,21 @@ export function panelButtonAt(u, v) {
   return null;
 }
 
+/**
+ * A door: its slot (index, from the entrance), its wall (side: -1 left, 1 right), where along the
+ * hall (z), and where it leads (env), or null while it is closed.
+ * @typedef {{ index: number, side: number, z: number, env: import('./environments.js').Environment | null }} Door
+ */
+/** The hall laid out: its doors, its ends, the lamps and beams, where one starts. @typedef {ReturnType<typeof layoutHall>} Layout */
+
+/**
+ * @param {import('./environments.js').Environment[]} envs
+ * @param {typeof HALL} [hall]
+ */
 export function layoutHall(envs, hall = HALL) {
   const slots = Math.max(hall.minSlots, envs.length + (envs.length % 2));
   const pairs = slots / 2;
+  /** @type {Door[]} */
   const doors = [];
   for (let i = 0; i < slots; i++) {
     const pair = Math.floor(i / 2);
@@ -172,9 +185,11 @@ export function doorCrossed(L, x, z) {
 /**
  * What a ray from inside the hall reaches first: a doorway (open or closed), the control panel, the
  * window, the floor, a wall or the ceiling. The hall is a box, so this is where the ray leaves it.
- * Writes into out { t, kind, door, x, y, z, nx, ny, nz, u, v } (n: the surface's normal, pointing
- * into the hall; u, v: where on the panel, 0…1 from its bottom left) and returns it, or null when
- * the ray leaves through no surface (it starts outside, pointing away).
+ * Writes into out { t, kind, door, x, y, z, nx, ny, nz, u, v, walkable } (n: the surface's normal,
+ * pointing into the hall; u, v: where on the panel, 0…1 from its bottom left; walkable: the floor,
+ * which common's controls walk and teleport to, and nothing else) and returns it, or null when the
+ * ray leaves through no surface (it starts outside, pointing away). out is reused from one ray to
+ * the next, so every field is written each time.
  */
 export function castRay(L, ox, oy, oz, dx, dy, dz, out) {
   const { hall } = L;
@@ -199,6 +214,7 @@ export function castRay(L, ox, oy, oz, dx, dy, dz, out) {
   out.nz = 0;
   out.u = 0;
   out.v = 0;
+  out.walkable = false;
   if (plane === 'left' || plane === 'right') {
     const side = plane === 'left' ? -1 : 1;
     out.kind = 'wall';
@@ -233,6 +249,7 @@ export function castRay(L, ox, oy, oz, dx, dy, dz, out) {
   } else if (plane === 'floor') {
     out.kind = 'floor';
     out.ny = 1;
+    out.walkable = true;
   } else if (plane === 'ceiling') {
     out.kind = 'ceiling';
     out.ny = -1;

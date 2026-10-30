@@ -36,7 +36,8 @@ export function companyText(here, away) {
  * @param {boolean} o.loaded  the session module has loaded and the room is joined
  * @param {number} o.relays  the Nostr relays open
  * @param {boolean} o.slow  still no relay about 10 s after joining
- * @param {number} [o.here]  others in the hallway, [o.away] elsewhere in the session (their hello has come)
+ * @param {number} [o.here]  others in the hallway (their hello has come)
+ * @param {number} [o.away]  others elsewhere in the session
  * @param {number} [o.connecting]  others connected whose hello hasn't come yet
  * @param {number} [o.failed]  handshakes with others that failed (a network that needs a TURN relay)
  */
@@ -74,7 +75,7 @@ export function noticeText({ kind, peer }, envs) {
 export function peopleList(peers, envs) {
   return peers
     .map((p) => ({ peerId: p.peerId, name: p.name, color: p.color, where: placeName(p.page, envs), rtt: p.rtt }))
-    .sort((a, b) => (b.where === 'here') - (a.where === 'here') || a.name.localeCompare(b.name));
+    .sort((a, b) => Number(b.where === 'here') - Number(a.where === 'here') || a.name.localeCompare(b.name));
 }
 
 /**

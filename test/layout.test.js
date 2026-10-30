@@ -80,6 +80,34 @@ test('castRay finds doors, the floor, the window and the walls', () => {
   assert.ok(Math.abs(at(0, 1.6, -1, 0, 1.6, 0).t - 1) < 1e-9);
 });
 
+test('castRay says only the floor is walkable, though one hit is written over from ray to ray', () => {
+  // common's controls walk to a click, and teleport to a trigger, only where it is walkable.
+  const L = layoutHall([env('a')]);
+  const [open] = L.doors;
+  const out = {};
+  const at = (tx, ty, tz) => {
+    const ox = 0, oy = 1.6, oz = -1;
+    const dx = tx - ox, dy = ty - oy, dz = tz - oz, n = Math.hypot(dx, dy, dz);
+    return castRay(L, ox, oy, oz, dx / n, dy / n, dz / n, out);
+  };
+  for (const [kind, x, y, z] of [
+    ['wall', -L.halfWidth, 1.2, -1.5],
+    ['panel', PANEL.side * (L.halfWidth - PANEL.depth), PANEL.y, PANEL.z],
+    ['door', -L.halfWidth, 1.2, open.z],
+    ['window', 0, 1.6, L.zEnd],
+    ['ceiling', 0, 3.2, -1.5],
+    ['wall', 0, 1.6, 0],
+  ]) {
+    const floor = at(0.5, 0, -2);
+    assert.equal(floor.kind, 'floor');
+    assert.equal(floor.walkable, true, 'the floor');
+    const hit = at(x, y, z);
+    assert.equal(hit, floor, 'the same hit, written over');
+    assert.equal(hit.kind, kind);
+    assert.equal(hit.walkable, false, `the ${kind}, met after the floor`);
+  }
+});
+
 test('castRay finds the control panel and the button pointed at', () => {
   const L = layoutHall([env('a')]);
   const out = {};

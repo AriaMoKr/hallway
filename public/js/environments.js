@@ -12,6 +12,8 @@
 //   preview   optional: a picture seen through the doorway, 2:1 suits best; it must be readable
 //             cross-origin (GitHub Pages allows that). Without one the doorway shows the title.
 //   color     the doorway's glow, as #rrggbb
+/** @typedef {{ id: string, title: string, subtitle: string, sign?: string, url: string, preview?: string, color: string }} Environment */
+/** @type {Environment[]} */
 export const ENVIRONMENTS = [
   {
     id: 'vrlbry',

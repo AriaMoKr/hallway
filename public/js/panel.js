@@ -14,7 +14,7 @@ const LABELS = {
   'motion:system': 'System', 'motion:reduce': 'Less', 'motion:full': 'Full',
   'vignette:on': 'On', 'vignette:off': 'Off', 'seated:on': 'On', 'seated:off': 'Off',
 };
-/** The rows' names, at their middles on the canvas. */
+/** The rows' names, at their middles on the canvas. @type {[string, number][]} */
 const ROWS = [['Move', 157], ['Turn', 219], ['Motion', 315], ['Vignette', 377], ['Seated', 439]];
 const VR_LABELS = { exit: 'Exit VR', enter: 'Enter VR', none: 'No VR in this browser' };
 const HINTS = {

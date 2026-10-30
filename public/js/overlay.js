@@ -41,10 +41,11 @@ function el(tag, attrs = {}, ...children) {
 
 export class Overlay {
   /**
-   * @param {Array} envs
-   * @param {(env) => string} href the link a door opens (link.js)
-   * @param {(env) => void} onLeave called when a door's link is followed
-   * @param {boolean} tv the TV app's page (tv.js)
+   * @param {import('./environments.js').Environment[]} envs
+   * @param {object} [o]
+   * @param {(env: import('./environments.js').Environment) => string} [o.href] the link a door opens (link.js)
+   * @param {(env: import('./environments.js').Environment) => void} [o.onLeave] called when a door's link is followed
+   * @param {boolean} [o.tv] the TV app's page (tv.js)
    */
   constructor(envs, { href = (env) => env.url, onLeave = () => {}, tv = false } = {}) {
     this.root = document.getElementById('overlay');
@@ -87,11 +88,11 @@ export class Overlay {
       this.inviteText ?? el('p', { class: 'together-note' }, 'Set your name here before entering VR: there is no typing in a headset.'));
     this.card.append(this.together);
     // The control panel's choices (main.js's controls.onPanel does the rest), in the same words.
-    /** (key, value) when a movement choice is made: 'move' 'smooth' | 'teleport', 'turn' 'snap' | 'smooth'. */
+    /** (key, value) when a movement choice is made: 'move' 'smooth' | 'teleport', 'turn' 'snap' | 'smooth'. @type {(key: string, value: string) => void} */
     this.onNav = () => {};
     /** When Start / Leave shared session is pressed. */
     this.onSession = () => {};
-    /** (change) when an accessibility setting changes: { motion }, { vignette } or { seated } (common/access.js). */
+    /** (change) when an accessibility setting changes: { motion }, { vignette } or { seated } (common/access.js). @type {(change: Record<string, string | boolean>) => void} */
     this.onAccess = () => {};
     this.navInputs = {};
     const choice = (key, legend, options, onChoose = (value) => this.onNav(key, value)) => {
@@ -123,7 +124,7 @@ export class Overlay {
       check('seated', 'Seated: raise the view in VR'),
       this.session);
     this.card.append(this.settings);
-    /** (text) when a room is given to join, on a TV: what was typed (main.js finds the room in it). */
+    /** (text) when a room is given to join, on a TV: what was typed (main.js finds the room in it). @type {(text: string) => void} */
     this.onJoin = () => {};
     if (tv) {
       this.joinRoom = el('input', { class: 'join-room', type: 'text', maxlength: '120', autocomplete: 'off', autocapitalize: 'none', spellcheck: 'false', placeholder: 'k3vd-q8hn' });

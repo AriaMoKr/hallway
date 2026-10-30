@@ -136,7 +136,7 @@ const fadeTime = (seconds) => (reduce ? 0.08 : seconds);
 function applyAccess() {
   reduce = reduceMotion(access, motion);
   controls.reduceMotion = reduce;
-  controls.setLift(eyeLift(access));
+  controls.setEyeLift(eyeLift(access));
   vignette.enabled = access.vignette;
   if (together) together.reduceMotion = reduce;
   document.documentElement.classList.toggle('reduce-motion', reduce);
@@ -168,6 +168,7 @@ addEventListener('storage', (e) => {
 // Where to start: in front of the door just come back through, else at the entrance. Arrivals
 // spread out by who they are (the shared session's member id, kept for the tab before any session
 // starts), so two who arrive together don't stand inside each other.
+/** @param {'sessionStorage' | 'localStorage'} name @returns {Storage | null} */
 const browserStorage = (name) => {
   try {
     return window[name];
@@ -177,7 +178,7 @@ const browserStorage = (name) => {
 };
 const spawnKey = hash(loadIdentity(browserStorage('sessionStorage'), browserStorage('localStorage')).memberId);
 function startPose() {
-  const navType = performance.getEntriesByType?.('navigation')?.[0]?.type;
+  const navType = /** @type {PerformanceNavigationTiming | undefined} */ (performance.getEntriesByType?.('navigation')?.[0])?.type;
   const id = arrivalDoorId({ search: location.search, referrer: document.referrer, navType, entryDoorId: entryDoor(), lastDoorId: lastDoor(), envs: ENVIRONMENTS });
   const door = id && L.doors.find((d) => d.env?.id === id);
   return door ? doorSpawn(L, door, spawnKey) : entranceSpawn(L, spawnKey);
@@ -231,8 +232,9 @@ window.addEventListener('pageshow', (e) => {
 // Leaving the page another way (a link, the address bar, closing it): leave the session too.
 window.addEventListener('pagehide', () => together.pause());
 
-controls.onSelect = (door, how) => {
-  if (!door.env) {
+// Every door comes here, open or not (common's use passes on every doorway).
+controls.onDoor = (how, { door }) => {
+  if (!door?.env) {
     overlay.toast('That door is not open yet.');
     return;
   }
@@ -437,13 +439,13 @@ let time = 0;
 function step(dt) {
   if (!reduce) time += dt; // the doorways' veils drift with it, and hold still with less motion
   controls.update(dt);
-  vignette.update(dt, controls.xrSpeed, controls.xrTurnRate, renderer.xr.isPresenting);
+  vignette.update(dt, controls.moveSpeed, controls.turnRate, renderer.xr.isPresenting);
   camera.getWorldPosition(head);
-  hall.update(time, dt, head, controls.hoverDoor);
+  hall.update(time, dt, head, controls.pointedDoor);
   together.update(performance.now());
   hall.panel.setHover(controls.hoverPanel);
-  overlay.setHover(controls.hoverDoor?.env ?? null);
-  overlay.setAim((controls.padActive || (remote !== null && !remote.inCard)) && !renderer.xr.isPresenting, !!(controls.hoverDoor?.env || controls.hoverPanel));
+  overlay.setHover(controls.pointedDoor?.env ?? null);
+  overlay.setAim((controls.padActive || (remote !== null && !remote.inCard)) && !renderer.xr.isPresenting, !!(controls.pointedDoor?.env || controls.hoverPanel));
   if (!leaving) {
     const door = doorCrossed(L, head.x, head.z);
     if (door) go(door);
