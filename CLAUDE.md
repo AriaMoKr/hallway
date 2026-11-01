@@ -10,13 +10,18 @@ whose conventions this project follows), Breadboard 8-bit's VR view
 (https://ariamokr.github.io/breadboard/vr.html), music (https://ariamokr.github.io/music/,
 AriaMoKr/music: a music room built from vrlbry, where Gutenberg's books on music play their scores) and Outside (https://ariamokr.github.io/outside/,
 AriaMoKr/outside: a small garden built for the door link, whose `HALLWAY_DOOR` in
-`public/js/way.js` is its entry here; keep them in step), and two rooms made from
-AriaMoKr/RoomTemplateEmpty and still empty, art (https://ariamokr.github.io/art/, AriaMoKr/art,
-soon a gallery) and video (https://ariamokr.github.io/video/, AriaMoKr/video, soon a room to watch
-videos in), each with its entry here as its `public/js/config.js`'s `hallwayDoor()`. All six take
-the VR hand-over. On an Android TV the hallway runs in AriaMoKr/HallwayApp (the site in a
-full-screen WebView whose user agent ends ` HallwayTV/<version>`; its README has the install, the
-build and its release workflow), where the page is in TV mode (common's `tv.js`).
+`public/js/way.js` is its entry here; keep them in step), and four rooms made from
+AriaMoKr/RoomTemplateEmpty: art (https://ariamokr.github.io/art/, AriaMoKr/art, soon a gallery,
+with the way into VARTISTE's painting studio on its wall), video (https://ariamokr.github.io/video/,
+AriaMoKr/video, still empty, soon a room to watch videos in), instruments
+(https://ariamokr.github.io/instruments/, AriaMoKr/instruments, a drum board of twelve pads to
+play, soon a keyboard, a synth and an electric guitar) and arcade
+(https://ariamokr.github.io/arcade/, AriaMoKr/arcade, still empty, soon an arcade of old computers,
+game consoles and arcade machines), each with its entry here as its `public/js/config.js`'s
+`hallwayDoor()`. All eight take the VR hand-over. On an Android TV the hallway runs in
+AriaMoKr/HallwayApp (the site in a full-screen WebView whose user agent ends
+` HallwayTV/<version>`; its README has the install, the build and its release workflow), where
+the page is in TV mode (common's `tv.js`).
 `public/` is the whole site. `README.md` covers
 using it, adding a door, and rendering the door views the site publishes. The door contract (what
 a door's link tells the environment, how environments link back, the door views) is AriaMoKr/common's

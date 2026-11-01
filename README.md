@@ -8,9 +8,12 @@ A WebXR corridor whose doors lead to other environments:
 computer in 3D, run live by its simulator; [music](https://ariamokr.github.io/music/), a music
 room where Project Gutenberg's books on music play their scores;
 [Outside](https://ariamokr.github.io/outside/), a small garden with a stream, a pond and a bench to
-read on; and two rooms still empty, [art](https://ariamokr.github.io/art/), soon a gallery of art,
-and [video](https://ariamokr.github.io/video/), soon a room to watch videos in. Walk the hallway in
-VR on a Meta Quest, on a desktop or on a phone, with nothing to install, or on an Android TV with
+read on; [art](https://ariamokr.github.io/art/), soon a gallery of art, with the way into
+VARTISTE's painting studio on its wall; [video](https://ariamokr.github.io/video/), an empty room,
+soon one to watch videos in; [instruments](https://ariamokr.github.io/instruments/), a room of
+instruments with a drum board of twelve pads to play; and [arcade](https://ariamokr.github.io/arcade/),
+an empty room, soon an arcade of old computers, game consoles and arcade machines. Walk the hallway
+in VR on a Meta Quest, on a desktop or on a phone, with nothing to install, or on an Android TV with
 its remote, in [the TV app](#the-tv-app).
 
 ![The hallway: a library's bookcases through an open door under a Library sign, and more doors and signs down a chequered floor to a window onto fields in the afternoon](public/social.jpg)
@@ -274,9 +277,9 @@ node tools/door-views.mjs --chrome
 It starts Chrome through common's `launchChrome`, on a new profile whose `Local State` is written
 first, so on Windows Chrome doesn't test the account's password with a failed logon. Headless
 Chrome draws the views as a Chrome window does, pixel for pixel; but the signs and plaques are in
-this computer's fonts, not the Quest's, so the views committed so far are the Quest's. The tool
-writes `public/views/<id>.jpg` and `views.json`, to be committed with the change. It also renders
-the picture a shared link to the hallway shows (see "Publishing"), `public/social.jpg`.
+this computer's fonts, not the Quest's. The tool writes `public/views/<id>.jpg` and `views.json`,
+to be committed with the change. It also renders the picture a shared link to the hallway shows
+(see "Publishing"), `public/social.jpg`.
 
 ## Publishing
 
