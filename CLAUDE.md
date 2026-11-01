@@ -13,7 +13,8 @@ AriaMoKr/outside: a small garden built for the door link, whose `HALLWAY_DOOR` i
 `public/js/way.js` is its entry here; keep them in step), and four rooms made from
 AriaMoKr/RoomTemplateEmpty: art (https://ariamokr.github.io/art/, AriaMoKr/art, soon a gallery,
 with the way into VARTISTE's painting studio on its wall), video (https://ariamokr.github.io/video/,
-AriaMoKr/video, still empty, soon a room to watch videos in), instruments
+AriaMoKr/video, rooms to watch old TV together in: a video store, a den, a screening room and a
+gallery of sets), instruments
 (https://ariamokr.github.io/instruments/, AriaMoKr/instruments, a drum board of twelve pads and a
 synth to play, soon a keyboard and an electric guitar) and arcade
 (https://ariamokr.github.io/arcade/, AriaMoKr/arcade, becoming an arcade of old computers, game

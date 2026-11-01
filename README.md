@@ -9,9 +9,10 @@ computer in 3D, run live by its simulator; [music](https://ariamokr.github.io/mu
 room where Project Gutenberg's books on music play their scores;
 [Outside](https://ariamokr.github.io/outside/), a small garden with a stream, a pond and a bench to
 read on; [art](https://ariamokr.github.io/art/), soon a gallery of art, with the way into
-VARTISTE's painting studio on its wall; [video](https://ariamokr.github.io/video/), an empty room,
-soon one to watch videos in; [instruments](https://ariamokr.github.io/instruments/), a room of
-instruments with a drum board and a synth to play; and [arcade](https://ariamokr.github.io/arcade/),
+VARTISTE's painting studio on its wall; [video](https://ariamokr.github.io/video/), rooms to watch
+old TV together in: a video store, a den, a screening room and a gallery of sets;
+[instruments](https://ariamokr.github.io/instruments/), a room of instruments with a drum board
+and a synth to play; and [arcade](https://ariamokr.github.io/arcade/),
 a room becoming an arcade of old computers, game consoles and arcade machines, so far with a
 Nintendo, a ZX Spectrum and an arcade cabinet to play. Walk the hallway in VR on a Meta Quest, on
 a desktop or on a phone, with nothing to install, or on an Android TV with its remote, in
