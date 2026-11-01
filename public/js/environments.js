@@ -82,7 +82,7 @@ export const ENVIRONMENTS = [
     // As art's: from RoomTemplateEmpty, its config.js's hallwayDoor().
     id: 'instruments',
     title: 'instruments',
-    subtitle: "A room of instruments behind the Hallway's door: a drum board of twelve analog pads to play, and soon a keyboard, a synth and an electric guitar. Walk it and play in VR on a Meta Quest, on a desktop or on a phone.",
+    subtitle: "A room of instruments behind the Hallway's door: a drum board of twelve analog pads and a six-voice analog synth to play, and soon a keyboard and an electric guitar. Walk it and play in VR on a Meta Quest, on a desktop or on a phone.",
     sign: 'Band Room',
     url: 'https://ariamokr.github.io/instruments/',
     preview: 'https://ariamokr.github.io/instruments/hallway-preview.jpg',
@@ -92,7 +92,7 @@ export const ENVIRONMENTS = [
     // As art's: from RoomTemplateEmpty, its config.js's hallwayDoor().
     id: 'arcade',
     title: 'arcade',
-    subtitle: "An empty room behind the Hallway's door, soon an arcade of old computers, game consoles and arcade machines. Walk it in VR on a Meta Quest, on a desktop or on a phone.",
+    subtitle: "A room behind the Hallway's door, becoming an arcade of old computers, game consoles and arcade machines: so far a Nintendo Entertainment System, a ZX Spectrum and an arcade cabinet to play. Walk it and play in VR on a Meta Quest, on a desktop or on a phone.",
     sign: 'Arcade',
     url: 'https://ariamokr.github.io/arcade/',
     preview: 'https://ariamokr.github.io/arcade/hallway-preview.jpg',

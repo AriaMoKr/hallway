@@ -14,10 +14,11 @@ AriaMoKr/outside: a small garden built for the door link, whose `HALLWAY_DOOR` i
 AriaMoKr/RoomTemplateEmpty: art (https://ariamokr.github.io/art/, AriaMoKr/art, soon a gallery,
 with the way into VARTISTE's painting studio on its wall), video (https://ariamokr.github.io/video/,
 AriaMoKr/video, still empty, soon a room to watch videos in), instruments
-(https://ariamokr.github.io/instruments/, AriaMoKr/instruments, a drum board of twelve pads to
-play, soon a keyboard, a synth and an electric guitar) and arcade
-(https://ariamokr.github.io/arcade/, AriaMoKr/arcade, still empty, soon an arcade of old computers,
-game consoles and arcade machines), each with its entry here as its `public/js/config.js`'s
+(https://ariamokr.github.io/instruments/, AriaMoKr/instruments, a drum board of twelve pads and a
+synth to play, soon a keyboard and an electric guitar) and arcade
+(https://ariamokr.github.io/arcade/, AriaMoKr/arcade, becoming an arcade of old computers, game
+consoles and arcade machines, so far with a Nintendo, a ZX Spectrum and an arcade cabinet to
+play), each with its entry here as its `public/js/config.js`'s
 `hallwayDoor()`. All eight take the VR hand-over. On an Android TV the hallway runs in
 AriaMoKr/HallwayApp (the site in a full-screen WebView whose user agent ends
 ` HallwayTV/<version>`; its README has the install, the build and its release workflow), where
