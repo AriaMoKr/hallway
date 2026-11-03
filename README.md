@@ -11,12 +11,13 @@ room where Project Gutenberg's books on music play their scores;
 read on; [art](https://ariamokr.github.io/art/), soon a gallery of art, with the way into
 VARTISTE's painting studio on its wall; [video](https://ariamokr.github.io/video/), rooms to watch
 old TV together in: a video store, a den, a screening room and a gallery of sets;
-[instruments](https://ariamokr.github.io/instruments/), a room of instruments with a drum board
-and a synth to play; and [arcade](https://ariamokr.github.io/arcade/),
-a room becoming an arcade of old computers, game consoles and arcade machines, so far with a
-Nintendo, a ZX Spectrum and an arcade cabinet to play. Walk the hallway in VR on a Meta Quest, on
-a desktop or on a phone, with nothing to install, or on an Android TV with its remote, in
-[the TV app](#the-tv-app).
+[instruments](https://ariamokr.github.io/instruments/), a room of instruments with a drum board, a
+synth with a rack of modules, a keyboard and an electric guitar to play;
+[arcade](https://ariamokr.github.io/arcade/), a room becoming an arcade of old computers, game
+consoles and arcade machines, so far with a Nintendo, a ZX Spectrum, an arcade cabinet, a Vectrex
+and an Atari 2600 to play; and [blocks](https://ariamokr.github.io/blocks/), a playroom with a
+marble run to build on its table. Walk the hallway in VR on a Meta Quest, on a desktop or on a
+phone, with nothing to install, or on an Android TV with its remote, in [the TV app](#the-tv-app).
 
 ![The hallway: a library's bookcases through an open door under a Library sign, and more doors and signs down a chequered floor to a window onto fields in the afternoon](public/social.jpg)
 
