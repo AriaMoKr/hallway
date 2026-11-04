@@ -72,7 +72,7 @@ export const ENVIRONMENTS = [
     // As art's: from RoomTemplateEmpty, its config.js's hallwayDoor().
     id: 'video',
     title: 'video',
-    subtitle: "Watch old TV together: public-domain shows from archive.org's Classic TV, in a video store, a den, a screening room or a gallery of sets. In VR, on a desktop or on a phone.",
+    subtitle: 'Watch old TV together: public-domain shows, newsreels, cartoons and films from archive.org, in a video store, a den, a screening room or a gallery of sets. In VR, on a desktop or on a phone.',
     sign: 'Screening Room',
     url: 'https://ariamokr.github.io/video/',
     preview: 'https://ariamokr.github.io/video/hallway-preview.jpg',
