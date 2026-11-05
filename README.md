@@ -203,7 +203,9 @@ without a headset.
 `node tools/quest-check.mjs` checks the hallway on a Quest connected over adb, which nobody needs
 to wear. It opens the published site, or the dev server with `--local` (started as above), enters
 VR, times the frames while walking the hall, presses the panel's settings and Exit VR, and writes
-a report to `perf/` (`--help` lists the options).
+a report to `perf/` (`--help` lists the options). Quest Browser asks once for each site and port
+before it lets one start VR, so the first check of one (the dev server, say) needs someone to
+allow it in the headset; after 15 s with no answer the check stops and says so.
 
 ## Adding a door
 

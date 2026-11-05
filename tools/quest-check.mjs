@@ -17,6 +17,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BROWSER = 'com.oculus.browser';
 const SITE = 'https://ariamokr.github.io/hallway/';
 const LOCAL_PORT = 8088;
+const ENTER_VR_MS = 15000; // how long Enter VR may take: an unanswered VR prompt in the headset takes for ever
 
 const HELP = `Usage: node tools/quest-check.mjs [options]
 
@@ -32,7 +33,9 @@ Options:
 Needs Node 22 or later (its WebSocket). The headset must be connected (USB or adb over Wi-Fi) with
 USB debugging allowed for this PC.
 Nobody needs to wear it: the check makes it act as worn and gives the sensor back at the end. The
-panel is pressed through its handler, so pointing a controller and the sticks are not covered.`;
+panel is pressed through its handler, so pointing a controller and the sticks are not covered.
+Quest Browser asks once for each site and port before it lets one start VR: the first check of one
+(--local, say) needs someone to allow it in the headset, and stops after ${ENTER_VR_MS / 1000} s if nobody does.`;
 
 /** Meta's power manager broadcasts: act as if worn, and give the proximity sensor back. */
 export const PROXIMITY = Object.freeze({
@@ -96,10 +99,24 @@ export function parseVrApiLine(line) {
   return { fps, target, stale: Number(f.Stale) || 0, gpuPct: pct(f['GPU%']), cpuPct: pct(f['CPU%']), frameMs: parseFloat(f['CPU&GPU']) || null };
 }
 
+/** The browser's own DevTools target (/json/version's webSocketDebuggerUrl), reached through `endpoint`. */
+export function browserSocket(endpoint, webSocketDebuggerUrl) {
+  return endpoint.replace(/^http/, 'ws') + new URL(webSocketDebuggerUrl).pathname;
+}
+
 // ---------------------------------------------------------------------------------------------
 // adb and DevTools
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** What `promise` settles to, or `otherwise` if it hasn't settled within `ms`. */
+export function within(promise, ms, otherwise) {
+  let timer;
+  const late = new Promise((resolve) => {
+    timer = setTimeout(resolve, ms, otherwise);
+  });
+  return Promise.race([promise, late]).finally(() => clearTimeout(timer));
+}
 
 function adbArgs(opts, args) {
   return opts.serial ? ['-s', opts.serial, ...args] : args;
@@ -200,6 +217,30 @@ async function connectHallway(port, url, ms) {
   }
 }
 
+/**
+ * Makes sure the browser behind `endpoint` (http://127.0.0.1:<forwarded port>) has a tab at `url`:
+ * waits up to `ms` for the VIEW intent's, else opens one with the browser's Target.createTarget.
+ * Quest Browser 156 sometimes hands a VIEW intent to the panel it has open and drops its URL.
+ * Returns whether it opened the tab.
+ */
+export async function ensureTab(endpoint, url, ms = 5000) {
+  const until = Date.now() + ms;
+  for (;;) {
+    const pages = await fetch(`${endpoint}/json/list`).then((r) => r.json(), () => []);
+    if (pages.some((p) => p.type === 'page' && p.url.startsWith(url))) return false;
+    if (Date.now() >= until) break;
+    await sleep(500);
+  }
+  const { webSocketDebuggerUrl } = await fetch(`${endpoint}/json/version`).then((r) => r.json());
+  const cdp = await Cdp.connect(browserSocket(endpoint, webSocketDebuggerUrl));
+  try {
+    await cdp.send('Target.createTarget', { url });
+  } finally {
+    cdp.close();
+  }
+  return true;
+}
+
 // ---------------------------------------------------------------------------------------------
 // In the page (strings evaluated over DevTools)
 
@@ -256,7 +297,7 @@ const PANEL_STATE = `({ panel: __hallway.hall.panel.state, move: __hallway.contr
 async function check(opts) {
   const url = opts.local ? `http://localhost:${LOCAL_PORT}/` : opts.url || SITE;
   const report = { at: new Date().toISOString(), url, device: {}, steps: [], frames: null, vrApi: [], errors: [], warnings: [] };
-  let port = null, prox = false, logcat = null;
+  let port = null, prox = false, logcat = null, cdp = null;
   const step = (name, data) => {
     report.steps.push({ step: name, ...data });
     console.log(`  ${name}${data && Object.keys(data).length ? `: ${JSON.stringify(data)}` : ''}`);
@@ -277,7 +318,8 @@ async function check(opts) {
     const sockets = devtoolsSockets(await adb(opts, 'shell', 'cat', '/proc/net/unix'));
     if (!sockets.length) throw new Error('no DevTools socket on the headset: is Quest Browser running?');
     port = Number((await adb(opts, 'forward', 'tcp:0', `localabstract:${sockets[0]}`)).trim());
-    const cdp = await connectHallway(port, url, 30000);
+    if (await ensureTab(`http://127.0.0.1:${port}`, url)) step('opened the tab over DevTools (Quest Browser left the link unopened)');
+    cdp = await connectHallway(port, url, 30000);
     await cdp.send('Runtime.enable');
     cdp.on('Runtime.exceptionThrown', (p) => report.errors.push(p.exceptionDetails?.exception?.description || p.exceptionDetails?.text));
     cdp.on('Runtime.consoleAPICalled', (p) => {
@@ -308,7 +350,18 @@ async function check(opts) {
     });
     logcat.on('error', () => {});
 
-    await cdp.eval('__hallway.enterVR()', { userGesture: true }).catch((e) => report.errors.push(`enterVR: ${e.message}`));
+    // enterVR() waits for the session. Quest Browser asks once for each site and port before it
+    // starts one, and the wait lasts until someone answers in the headset.
+    const answered = cdp.eval('__hallway.enterVR()', { userGesture: true }).then(
+      () => true,
+      (e) => {
+        report.errors.push(`enterVR: ${e.message}`);
+        return true;
+      },
+    );
+    if (!(await within(answered, ENTER_VR_MS, false))) {
+      throw new Error(`VR did not start in ${ENTER_VR_MS / 1000} s: is the headset asking whether ${new URL(url).origin} may open immersive experiences? Allow it there (Quest Browser asks once for each site and port) and run the check again`);
+    }
     if (!(await pollPage(cdp, '__hallway.renderer.xr.isPresenting', 10000))) throw new Error('VR did not start');
     step('entered VR', { panel: await cdp.eval('__hallway.hall.panel.state') });
     await cdp.eval(START_TIMING);
@@ -341,10 +394,11 @@ async function check(opts) {
       if (v == null) localStorage.removeItem('hallway.nav'); else localStorage.setItem('hallway.nav', v);
       return true;
     })()`);
-    cdp.close();
   } catch (err) {
     report.errors.push(`check: ${err.message}`);
   } finally {
+    // Open, its WebSocket would keep this process running after a failure.
+    cdp?.close();
     logcat?.kill();
     if (prox) await adb(opts, ...PROXIMITY.sensor).catch(() => {});
     if (port) await adb(opts, 'forward', '--remove', `tcp:${port}`).catch(() => {});

@@ -12,7 +12,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs, promisify } from 'node:util';
 import { launchChrome } from 'common/tools/chrome.mjs';
-import { devtoolsSockets } from './quest-check.mjs';
+import { devtoolsSockets, ensureTab } from './quest-check.mjs';
 
 const execFileP = promisify(execFile);
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -131,6 +131,7 @@ async function main() {
       if (!sockets.length) throw new Error('no DevTools socket on the headset: is Quest Browser running?');
       forward = Number((await adb('forward', 'tcp:0', `localabstract:${sockets[0]}`)).trim());
       endpoint = `http://127.0.0.1:${forward}`;
+      if (await ensureTab(endpoint, `http://localhost:${port}/`)) console.log('opened the tab over DevTools (Quest Browser left the link unopened)');
     }
     const ws = await findPage(endpoint, port, 60000);
     // A tab left open from an earlier run still has the hall as it was then: load it afresh. The

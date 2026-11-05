@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseAdbDevices, devtoolsSockets, summarizeFrames, parseVrApiLine } from '../tools/quest-check.mjs';
+import { parseAdbDevices, devtoolsSockets, summarizeFrames, parseVrApiLine, browserSocket, within } from '../tools/quest-check.mjs';
 
 test('adb devices: serials and states (adb on Windows prints CRLF)', () => {
   const out = 'List of devices attached\r\n192.168.1.20:5555\tdevice product:eureka model:Quest_3\r\n2G0YC1ZF\tunauthorized\r\n\r\n';
@@ -41,4 +41,19 @@ test('a VrApi line', () => {
   const line = '1792362300.123 VrApi: FPS=91/90,Prd=24ms,Tear=0,Early=0,Stale=2,Stale2/5/10/max=1/0/0/2,CPU&GPU=5.54ms,GPU%=0.37,CPU%=0.16(W0.18),Temp=35.0C/0.0C';
   assert.deepEqual(parseVrApiLine(line), { fps: 91, target: 90, stale: 2, gpuPct: 37, cpuPct: 16, frameMs: 5.54 });
   assert.equal(parseVrApiLine('VrApi: something else'), null);
+});
+
+test("the browser's own DevTools target, through the forwarded port, whatever host it names", () => {
+  const endpoint = 'http://127.0.0.1:7018';
+  assert.equal(browserSocket(endpoint, 'ws://localhost/devtools/browser/0a1b-2c'), 'ws://127.0.0.1:7018/devtools/browser/0a1b-2c');
+  assert.equal(browserSocket(endpoint, 'ws://127.0.0.1:7018/devtools/browser/0a1b-2c'), 'ws://127.0.0.1:7018/devtools/browser/0a1b-2c');
+});
+
+test('a wait with a limit: the answer when it comes in time, else the fallback (a VR prompt nobody answers)', async () => {
+  assert.equal(await within(Promise.resolve('entered'), 1000, 'waiting'), 'entered');
+  assert.equal(await within(new Promise(() => {}), 20, 'waiting'), 'waiting');
+  await assert.rejects(within(Promise.reject(new Error('refused')), 1000, 'waiting'), /refused/);
+  const started = Date.now();
+  await within(Promise.resolve(), 60000, null);
+  assert.ok(Date.now() - started < 1000, 'settled at once, its timer cleared');
 });
