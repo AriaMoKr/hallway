@@ -82,7 +82,7 @@ export const ENVIRONMENTS = [
     // As art's: from RoomTemplateEmpty, its config.js's hallwayDoor().
     id: 'instruments',
     title: 'instruments',
-    subtitle: "A room of instruments behind the Hallway's door: a drum board of twelve analog pads, a six-voice analog synth with a rack of modules, a keyboard with an organ and an electric piano, and an electric guitar with its amp to play. Walk it and play in VR on a Meta Quest, on a desktop or on a phone.",
+    subtitle: "A room of instruments behind the Hallway's door: a drum board of twelve analog pads, a six-voice analog synth with a rack of modules, a keyboard with an organ and an electric piano, and an electric guitar with its amp and pedals to play. Walk it and play in VR on a Meta Quest, on a desktop or on a phone.",
     sign: 'Band Room',
     url: 'https://ariamokr.github.io/instruments/',
     preview: 'https://ariamokr.github.io/instruments/hallway-preview.jpg',
@@ -92,7 +92,7 @@ export const ENVIRONMENTS = [
     // As art's: from RoomTemplateEmpty, its config.js's hallwayDoor().
     id: 'arcade',
     title: 'arcade',
-    subtitle: "A room behind the Hallway's door, becoming an arcade of old computers, game consoles and arcade machines: so far a Nintendo Entertainment System, a ZX Spectrum, an arcade cabinet, a Vectrex and an Atari 2600 to play. Walk it and play in VR on a Meta Quest, on a desktop or on a phone.",
+    subtitle: "A room behind the Hallway's door, becoming an arcade of old computers, game consoles and arcade machines: so far a Nintendo Entertainment System, a ZX Spectrum, an arcade cabinet, a Vectrex, an Atari 2600 and a Sega Mega Drive to play. Walk it and play in VR on a Meta Quest, on a desktop or on a phone.",
     sign: 'Arcade',
     url: 'https://ariamokr.github.io/arcade/',
     preview: 'https://ariamokr.github.io/arcade/hallway-preview.jpg',
@@ -102,7 +102,7 @@ export const ENVIRONMENTS = [
     // As art's: from RoomTemplateEmpty, its config.js's hallwayDoor().
     id: 'blocks',
     title: 'blocks',
-    subtitle: "A playroom behind the Hallway's door, with a marble run to build on its table: four challenges and a free build, and gears, logs and planks to come. Build in VR on a Meta Quest, on a desktop or on a phone.",
+    subtitle: "A playroom behind the Hallway's door, with a marble run and a gear train to build on their tables, each with challenges and free play, a log cabin to build and walk inside, and planks to come. Build in VR on a Meta Quest, on a desktop or on a phone.",
     sign: 'Playroom',
     url: 'https://ariamokr.github.io/blocks/',
     preview: 'https://ariamokr.github.io/blocks/hallway-preview.jpg',
