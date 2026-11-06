@@ -19,9 +19,10 @@ gallery of sets), instruments
 synth with a rack of modules, a keyboard and an electric guitar to play), arcade
 (https://ariamokr.github.io/arcade/, AriaMoKr/arcade, becoming an arcade of old computers, game
 consoles and arcade machines, so far with a Nintendo, a ZX Spectrum, an arcade cabinet, a Vectrex,
-an Atari 2600 and a Sega Mega Drive to play) and blocks (https://ariamokr.github.io/blocks/,
-AriaMoKr/blocks, a playroom with a marble run and a gear train to build on their tables and a log
-cabin to build and walk inside), each with its entry here as its
+an Atari 2600, a Sega Mega Drive and a Game Boy to play) and blocks
+(https://ariamokr.github.io/blocks/, AriaMoKr/blocks, a playroom with a marble run and a gear train
+to build on their tables, a log cabin to build and walk inside, a waffle fort to build and crawl
+inside, and planks to stack and knock down), each with its entry here as its
 `public/js/config.js`'s `hallwayDoor()`. All nine take the VR hand-over. On an Android TV the
 hallway runs in AriaMoKr/HallwayApp (the site in a full-screen WebView whose user agent ends
 ` HallwayTV/<version>`; its README has the install, the build and its release workflow), where
